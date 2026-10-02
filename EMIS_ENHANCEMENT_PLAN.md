@@ -2,7 +2,7 @@
 
 Documento de implementación. No copia diseño, marca, colores ni textos de EMIS. Complementa la app que ya corre en este worktree (`mvp-inteligencia-empresarial`). No se reconstruye el proyecto.
 
-Revisión hecha sobre el código de este worktree el 2026-10-02. La fase 1 no está empezada.
+Revisión hecha sobre el código de este worktree el 2026-10-02. La implementación de este documento vive en la misma rama y conserva las pantallas que ya existían.
 
 `itc-frontend-base` sigue sin existir en el registro público: `npm view itc-frontend-base` contra `https://registry.npmjs.org` responde **404** (`itc-frontend-base@* is not in this registry`). No hay `.npmrc`. No se instala, no se declara en `package.json` y no se reescribe la UI para perseguir ese paquete. Los primitivos siguen siendo los de shadcn/ui que ya están en `src/components/ui` (Button, Input, Card, Tabs, Table, Select, Dialog, Sheet, Badge, Skeleton, Sonner). Recharts y `@xyflow/react` se quedan.
 
