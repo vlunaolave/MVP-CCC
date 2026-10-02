@@ -5,7 +5,10 @@ import { establishments } from "../../../prisma/data/establishments";
 import { events } from "../../../prisma/data/events";
 import { people } from "../../../prisma/data/people";
 import { relations } from "../../../prisma/data/relations";
+import { benchmarks } from "../../../prisma/data/benchmarks";
+import { financials } from "../../../prisma/data/financials";
 import { initialAudit, monitoringSeed, settings, users } from "../../../prisma/data/users";
+import { watchlists } from "../../../prisma/data/watchlists";
 import { DataSourceNotImplemented } from "@/server/errors";
 
 export interface DataSourceAdapter {
@@ -25,6 +28,9 @@ export class DemoDataSourceAdapter implements DataSourceAdapter {
       monitoring: monitoringSeed,
       initialAudit,
       settings,
+      financials,
+      benchmarks,
+      watchlists,
     };
   }
 }

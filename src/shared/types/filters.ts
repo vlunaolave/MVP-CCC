@@ -1,12 +1,31 @@
-import type { EstadoMatricula, Severidad, TamanoEmpresa, TipoEvento, TipoRegistro } from "@/shared/types/domain";
+import type {
+  EstadoMatricula,
+  SectorCodigo,
+  Severidad,
+  SortDir,
+  SortKey,
+  TamanoEmpresa,
+  TipoEvento,
+  TipoRegistro,
+} from "@/shared/types/domain";
 
 export interface CompanyFilters {
   q?: string;
   tipoRegistro?: TipoRegistro;
   estadoMatricula?: EstadoMatricula;
   municipio?: string;
+  departamento?: string;
   actividad?: string;
   tamanoEmpresa?: TamanoEmpresa;
+  sector?: SectorCodigo;
+  empleadosMin?: number;
+  empleadosMax?: number;
+  ingresosMin?: number;
+  ingresosMax?: number;
+  activosMin?: number;
+  activosMax?: number;
+  sort?: SortKey;
+  dir?: SortDir;
 }
 
 export interface AlertFilters {
@@ -29,5 +48,8 @@ export interface DashboardFilters {
   hasta?: string;
   tipoRegistro?: TipoRegistro;
   municipio?: string;
+  departamento?: string;
   estadoMatricula?: EstadoMatricula;
+  sector?: SectorCodigo;
+  tamanoEmpresa?: TamanoEmpresa;
 }

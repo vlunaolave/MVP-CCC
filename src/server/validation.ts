@@ -1,6 +1,24 @@
 import { z } from "zod";
 
-import { ROL_CODIGOS } from "@/shared/types/domain";
+import { ROL_CODIGOS, SECTOR_CODIGOS } from "@/shared/types/domain";
+
+const tipoEventoSchema = z.enum([
+  "CONSTITUCION",
+  "MATRICULA",
+  "RENOVACION",
+  "CAMBIO_REPRESENTANTE",
+  "CAMBIO_DOMICILIO",
+  "MODIFICACION_ACTIVIDAD",
+  "CAMBIO_ESTADO_MATRICULA",
+  "CAMBIO_TIPO_ORGANIZACION",
+  "APERTURA_ESTABLECIMIENTO",
+  "OTRO_REGISTRAL",
+  "NOTICIA",
+  "NOMBRAMIENTO",
+  "CAMBIO_PARTICIPACION",
+]);
+
+const optionalNumber = z.coerce.number().finite().optional();
 
 export const loginSchema = z.object({
   email: z.string().trim().min(1, "Ingresa el correo."),
@@ -14,6 +32,16 @@ export const companyQuerySchema = z.object({
   municipio: z.string().optional(),
   actividad: z.string().optional(),
   tamanoEmpresa: z.enum(["MICRO", "PEQUENA", "MEDIANA", "GRANDE"]).optional(),
+  departamento: z.string().optional(),
+  sector: z.enum(SECTOR_CODIGOS).optional(),
+  empleadosMin: optionalNumber,
+  empleadosMax: optionalNumber,
+  ingresosMin: optionalNumber,
+  ingresosMax: optionalNumber,
+  activosMin: optionalNumber,
+  activosMax: optionalNumber,
+  sort: z.enum(["razonSocial", "nit", "sector", "municipio", "revenue", "totalAssets", "employees", "estadoMatricula"]).optional(),
+  dir: z.enum(["asc", "desc"]).optional(),
 });
 
 export const alertQuerySchema = z.object({
@@ -21,20 +49,7 @@ export const alertQuerySchema = z.object({
   hasta: z.string().optional(),
   companyId: z.string().optional(),
   q: z.string().optional(),
-  tipo: z
-    .enum([
-      "CONSTITUCION",
-      "MATRICULA",
-      "RENOVACION",
-      "CAMBIO_REPRESENTANTE",
-      "CAMBIO_DOMICILIO",
-      "MODIFICACION_ACTIVIDAD",
-      "CAMBIO_ESTADO_MATRICULA",
-      "CAMBIO_TIPO_ORGANIZACION",
-      "APERTURA_ESTABLECIMIENTO",
-      "OTRO_REGISTRAL",
-    ])
-    .optional(),
+  tipo: tipoEventoSchema.optional(),
   severidad: z.enum(["INFORMATIVA", "ATENCION", "IMPORTANTE"]).optional(),
   leida: z.enum(["true", "false"]).optional(),
 });
@@ -49,7 +64,23 @@ export const dashboardQuerySchema = z.object({
   hasta: z.string().optional(),
   tipoRegistro: z.enum(["MERCANTIL", "ESAL"]).optional(),
   municipio: z.string().optional(),
+  departamento: z.string().optional(),
   estadoMatricula: z.enum(["ACTIVA", "SUSPENDIDA", "CANCELADA", "INACTIVA"]).optional(),
+  sector: z.enum(SECTOR_CODIGOS).optional(),
+  tamanoEmpresa: z.enum(["MICRO", "PEQUENA", "MEDIANA", "GRANDE"]).optional(),
+});
+
+export const savedSearchSchema = z.object({
+  nombre: z.string().trim().min(3, "El nombre debe tener al menos 3 caracteres.").max(80, "El nombre admite hasta 80 caracteres."),
+  filtros: companyQuerySchema,
+});
+
+export const watchlistCompanySchema = z.object({
+  companyId: z.string().min(1, "Selecciona una empresa."),
+});
+
+export const comparadorQuerySchema = z.object({
+  ids: z.string().optional(),
 });
 
 export const monitorBodySchema = z.object({

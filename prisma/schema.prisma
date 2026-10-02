@@ -33,6 +33,31 @@ enum TamanoEmpresa {
   GRANDE
 }
 
+enum SectorCodigo {
+  TECNOLOGIA
+  COMERCIO
+  CONSTRUCCION
+  SERVICIOS
+  INDUSTRIA
+  TRANSPORTE
+  SALUD
+}
+
+enum CategoriaEvento {
+  REGISTRAL
+  CORPORATIVO
+  FINANCIERO
+  NOTICIA
+}
+
+enum TipoLista {
+  CLIENTES_ESTRATEGICOS
+  PROSPECTOS
+  PROVEEDORES
+  TECNOLOGIA
+  PERSONAL
+}
+
 enum RolCodigo {
   ADMINISTRADOR
   ANALISTA
@@ -51,6 +76,12 @@ enum TipoRelacion {
   ESTABLECIMIENTO
   PERSONA_OTRA_EMPRESA
   EMPRESA_RELACIONADA
+  SUPLENTE
+  MIEMBRO_JUNTA
+  REVISOR_FISCAL
+  OTRO_CARGO
+  MATRIZ
+  SUBSIDIARIA
 }
 
 enum TipoEvento {
@@ -64,6 +95,9 @@ enum TipoEvento {
   CAMBIO_TIPO_ORGANIZACION
   APERTURA_ESTABLECIMIENTO
   OTRO_REGISTRAL
+  NOTICIA
+  NOMBRAMIENTO
+  CAMBIO_PARTICIPACION
 }
 
 enum CondicionRegla {
@@ -103,6 +137,8 @@ model User {
   identities   AuthIdentity[]
   monitoreos   MonitoredCompany[]
   auditoria    AuditLog[]
+  listas       Watchlist[]
+  busquedas    SavedSearch[]
 }
 
 model AuthIdentity {
@@ -183,6 +219,8 @@ model Company {
   estado                       EstadoJuridico
   representanteLegal           String?
   fechaUltimaActualizacion     DateTime
+  sector                       SectorCodigo
+  fuenteDatos                  String          @default("DEMO")
 
   establecimientos Establishment[]
   relaciones       CompanyRelation[] @relation("CompanyRelations")
@@ -190,6 +228,8 @@ model Company {
   eventos          TimelineEvent[]
   alertas          Alert[]
   monitoreos       MonitoredCompany[]
+  periodos         CompanyFinancialPeriod[]
+  listas           WatchlistItem[]
 
   @@index([razonSocial])
   @@index([nombreComercial])
@@ -198,6 +238,8 @@ model Company {
   @@index([municipio])
   @@index([actividadEconomicaCodigo])
   @@index([tamanoEmpresa])
+  @@index([sector])
+  @@index([departamento])
 }
 
 model Person {
@@ -230,6 +272,7 @@ model CompanyRelation {
   relatedCompanyId        String?
   establishmentId         String?
   descripcion             String
+  cargo                   String?
   porcentajeParticipacion Decimal?
   fechaInicio             DateTime
   fechaFin                DateTime?
@@ -242,9 +285,10 @@ model CompanyRelation {
 }
 
 model TimelineEvent {
-  id          String     @id @default(uuid())
+  id          String          @id @default(uuid())
   companyId   String
   tipo        TipoEvento
+  categoria   CategoriaEvento
   fecha       DateTime
   titulo      String
   descripcion String
@@ -321,4 +365,79 @@ model AppSetting {
   clave       String @unique
   valor       String
   descripcion String
+}
+
+model CompanyFinancialPeriod {
+  id                  String   @id @default(uuid())
+  companyId           String
+  year                Int
+  revenue             Decimal
+  ebitda              Decimal
+  netProfit           Decimal
+  totalAssets         Decimal
+  totalLiabilities    Decimal
+  equity              Decimal
+  employees           Int
+  currentAssets       Decimal?
+  currentLiabilities  Decimal?
+  fuenteDatos         String   @default("DEMO")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, year])
+}
+
+model SectorBenchmark {
+  id               String       @id @default(uuid())
+  sector           SectorCodigo
+  year             Int
+  avgRevenue       Decimal
+  avgEbitda        Decimal
+  avgNetProfit     Decimal
+  avgAssets        Decimal
+  avgLiabilities   Decimal
+  avgEquity        Decimal
+  avgEmployees     Decimal
+  avgRevenueGrowth Decimal
+  avgAssetGrowth   Decimal
+  fuenteDatos      String       @default("DEMO")
+
+  @@unique([sector, year])
+}
+
+model Watchlist {
+  id        String    @id @default(uuid())
+  userId    String
+  nombre    String
+  tipo      TipoLista
+  createdAt DateTime  @default(now())
+
+  user    User            @relation(fields: [userId], references: [id])
+  empresas WatchlistItem[]
+
+  @@index([userId])
+}
+
+model WatchlistItem {
+  id          String   @id @default(uuid())
+  watchlistId String
+  companyId   String
+  createdAt   DateTime @default(now())
+
+  watchlist Watchlist @relation(fields: [watchlistId], references: [id], onDelete: Cascade)
+  company   Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([watchlistId, companyId])
+}
+
+model SavedSearch {
+  id        String   @id @default(uuid())
+  userId    String
+  nombre    String
+  filtros   Json
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
 }

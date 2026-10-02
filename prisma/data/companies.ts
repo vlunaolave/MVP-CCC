@@ -1,9 +1,12 @@
 import type { CompanySeed } from "./types";
+import { extraCompanies, extraSectors } from "./companies-extra";
+
+type CompanyBase = Omit<CompanySeed, "sector" | "fuenteDatos">;
 
 const CAMARA = "Cámara de Comercio de Cali";
 const DEPTO = "Valle del Cauca";
 
-export const companies: CompanySeed[] = [
+const baseCompanies: CompanyBase[] = [
   {
     id: "co-innova",
     nit: "901847263-1",
@@ -620,4 +623,39 @@ export const companies: CompanySeed[] = [
     estado: "VIGENTE",
     representanteLegal: "Valeria Soto Henao",
   },
+  ...extraCompanies,
 ];
+
+const sectorById: Record<string, CompanySeed["sector"]> = {
+  "co-innova": "TECNOLOGIA",
+  "co-nube": "TECNOLOGIA",
+  "co-cafe": "COMERCIO",
+  "co-mercado": "COMERCIO",
+  "co-ladrillo": "CONSTRUCCION",
+  "co-barrio": "CONSTRUCCION",
+  "co-horizonte": "SERVICIOS",
+  "co-punto": "SERVICIOS",
+  "co-semilla": "SERVICIOS",
+  "co-faro": "SERVICIOS",
+  "co-recicladores": "SERVICIOS",
+  "co-marea": "SERVICIOS",
+  "co-brio": "INDUSTRIA",
+  "co-textiles": "INDUSTRIA",
+  "co-horno": "INDUSTRIA",
+  "co-frio": "INDUSTRIA",
+  "co-metal": "INDUSTRIA",
+  "co-agro": "INDUSTRIA",
+  "co-andes": "TRANSPORTE",
+  "co-rutas": "TRANSPORTE",
+  "co-bahia": "TRANSPORTE",
+  "co-bienestar": "SALUD",
+  ...extraSectors,
+};
+
+export const companies: CompanySeed[] = baseCompanies.map((company) => {
+  const sector = sectorById[company.id];
+  if (!sector) {
+    throw new Error(`Sin sector para ${company.id}`);
+  }
+  return { ...company, sector, fuenteDatos: "DEMO" };
+});

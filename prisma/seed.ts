@@ -21,11 +21,16 @@ async function main() {
   await prisma.auditLog.deleteMany();
   await prisma.alert.deleteMany();
   await prisma.monitoredCompany.deleteMany();
+  await prisma.watchlistItem.deleteMany();
+  await prisma.watchlist.deleteMany();
+  await prisma.savedSearch.deleteMany();
   await prisma.timelineEvent.deleteMany();
   await prisma.companyRelation.deleteMany();
   await prisma.establishment.deleteMany();
+  await prisma.companyFinancialPeriod.deleteMany();
   await prisma.person.deleteMany();
   await prisma.company.deleteMany();
+  await prisma.sectorBenchmark.deleteMany();
   await prisma.alertRule.deleteMany();
   await prisma.session.deleteMany();
   await prisma.authIdentity.deleteMany();
@@ -85,6 +90,8 @@ async function main() {
         estado: company.estado,
         representanteLegal: company.representanteLegal,
         fechaUltimaActualizacion: latestDate(companyEvents, company.fechaMatricula),
+        sector: company.sector,
+        fuenteDatos: company.fuenteDatos,
       },
     });
   }
@@ -105,6 +112,7 @@ async function main() {
         relatedCompanyId: relation.relatedCompanyId,
         establishmentId: relation.establishmentId,
         descripcion: relation.descripcion,
+        cargo: relation.cargo,
         porcentajeParticipacion: relation.porcentajeParticipacion,
         fechaInicio: dateOnly(relation.fechaInicio),
         fechaFin: relation.fechaFin ? dateOnly(relation.fechaFin) : null,
@@ -118,6 +126,7 @@ async function main() {
         id: event.id,
         companyId: event.companyId,
         tipo: event.tipo,
+        categoria: event.categoria,
         fecha: dateOnly(event.fecha),
         titulo: event.titulo,
         descripcion: event.descripcion,
@@ -125,6 +134,28 @@ async function main() {
         metadata: event.metadata ? { ...event.metadata } : undefined,
       },
     });
+  }
+  for (const period of dataset.financials) {
+    await prisma.companyFinancialPeriod.create({
+      data: {
+        id: period.id,
+        companyId: period.companyId,
+        year: period.year,
+        revenue: period.revenue,
+        ebitda: period.ebitda,
+        netProfit: period.netProfit,
+        totalAssets: period.totalAssets,
+        totalLiabilities: period.totalLiabilities,
+        equity: period.equity,
+        employees: period.employees,
+        currentAssets: period.currentAssets,
+        currentLiabilities: period.currentLiabilities,
+        fuenteDatos: "DEMO",
+      },
+    });
+  }
+  for (const benchmark of dataset.benchmarks) {
+    await prisma.sectorBenchmark.create({ data: { ...benchmark, fuenteDatos: "DEMO" } });
   }
   for (const rule of dataset.alertRules) {
     await prisma.alertRule.create({ data: rule });
@@ -163,6 +194,23 @@ async function main() {
     });
   }
 
+  for (const list of dataset.watchlists) {
+    const userId = userIds.get(list.userEmail);
+    if (!userId) {
+      throw new Error(`Usuario de lista desconocido: ${list.userEmail}`);
+    }
+    await prisma.watchlist.create({
+      data: {
+        id: list.id,
+        userId,
+        nombre: list.nombre,
+        tipo: list.tipo,
+        empresas: {
+          create: list.companyIds.map((companyId) => ({ companyId })),
+        },
+      },
+    });
+  }
   for (const item of dataset.monitoring) {
     const userId = userIds.get(item.userEmail);
     if (!userId) {

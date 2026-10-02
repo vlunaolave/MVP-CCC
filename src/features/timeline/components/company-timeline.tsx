@@ -2,46 +2,58 @@
 
 import { useState } from "react";
 
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/shared/components/screen-states";
-import type { TimelineItem, TipoEvento } from "@/shared/types/domain";
+import type { CategoriaTimeline, TimelineItem } from "@/shared/types/domain";
 import { formatDisplayDate } from "@/shared/utils/dates";
-import { EVENTO_LABEL } from "@/shared/utils/labels";
+import { CATEGORIA_LABEL, EVENTO_LABEL } from "@/shared/utils/labels";
 
-const ALL = "todos";
+const FILTERS: { id: "todos" | CategoriaTimeline; label: string }[] = [
+  { id: "todos", label: "Todos" },
+  { id: "REGISTRAL", label: "Registrales" },
+  { id: "CORPORATIVO", label: "Corporativos" },
+  { id: "FINANCIERO", label: "Financieros" },
+  { id: "ALERTA", label: "Alertas" },
+  { id: "NOTICIA", label: "Noticias" },
+];
+
+function fuenteLabel(fuente: string) {
+  if (fuente === "ESAL") return "ESAL";
+  if (fuente === "DEMO" || fuente === "Datos de demostración") return "Datos de demostración";
+  return "Registro Mercantil";
+}
 
 export function CompanyTimeline({ events }: { events: TimelineItem[] }) {
-  const [tipo, setTipo] = useState<string>(ALL);
-  const options = [...new Set(events.map((event) => event.tipo))];
-  const visible = tipo === ALL ? events : events.filter((event) => event.tipo === tipo);
+  const [categoria, setCategoria] = useState<(typeof FILTERS)[number]["id"]>("todos");
+  const visible = categoria === "todos" ? events : events.filter((event) => event.categoria === categoria);
 
   return (
     <div className="grid gap-4">
-      <div className="max-w-xs">
-        <Label>Tipo de evento</Label>
-        <Select value={tipo} onValueChange={setTipo}>
-          <SelectTrigger className="mt-1.5 w-full" data-testid="timeline-filter">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>Todos</SelectItem>
-            {options.map((option) => (
-              <SelectItem key={option} value={option}>
-                {EVENTO_LABEL[option as TipoEvento]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar línea de tiempo">
+        {FILTERS.map((filter) => (
+          <Button
+            key={filter.id}
+            type="button"
+            size="sm"
+            variant={categoria === filter.id ? "default" : "outline"}
+            aria-pressed={categoria === filter.id}
+            onClick={() => setCategoria(filter.id)}
+          >
+            {filter.label}
+          </Button>
+        ))}
       </div>
-      {visible.length === 0 ? <EmptyState title="No hay eventos de este tipo." /> : null}
+      {visible.length === 0 ? <EmptyState title="No hay eventos de esta categoría." /> : null}
       <ol className="relative grid gap-0 border-l border-primary/30 pl-6">
         {visible.map((event) => (
           <li key={event.id} className="relative pb-6">
             <span className="absolute top-1.5 -left-[1.65rem] size-3 rounded-full border-2 border-primary bg-card" aria-hidden="true" />
             <p className="text-xs text-muted-foreground">{formatDisplayDate(event.fecha)}</p>
             <p className="font-medium">{event.titulo}</p>
-            <p className="text-sm text-muted-foreground">{EVENTO_LABEL[event.tipo]} · {event.fuente === "ESAL" ? "ESAL" : "Registro Mercantil"}</p>
+            <p className="text-sm text-muted-foreground">
+              {CATEGORIA_LABEL[event.categoria]}
+              {event.tipo ? ` · ${EVENTO_LABEL[event.tipo]}` : ""} · {fuenteLabel(event.fuente)}
+            </p>
             <p className="mt-1 text-sm leading-6">{event.descripcion}</p>
           </li>
         ))}

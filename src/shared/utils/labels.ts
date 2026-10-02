@@ -1,10 +1,13 @@
 import type {
+  CategoriaTimeline,
   EstadoJuridico,
   EstadoMatricula,
   RolCodigo,
+  SectorCodigo,
   Severidad,
   TamanoEmpresa,
   TipoEvento,
+  TipoLista,
   TipoRegistro,
   TipoRelacion,
 } from "@/shared/types/domain";
@@ -47,12 +50,64 @@ export const ROL_LABEL: Record<RolCodigo, string> = {
   CONSULTOR: "Consultor",
 };
 
+export const SECTOR_LABEL: Record<SectorCodigo, string> = {
+  TECNOLOGIA: "Tecnología",
+  COMERCIO: "Comercio",
+  CONSTRUCCION: "Construcción",
+  SERVICIOS: "Servicios",
+  INDUSTRIA: "Industria",
+  TRANSPORTE: "Transporte",
+  SALUD: "Salud",
+};
+
+export const SECTOR_SLUG: Record<SectorCodigo, string> = {
+  TECNOLOGIA: "tecnologia",
+  COMERCIO: "comercio",
+  CONSTRUCCION: "construccion",
+  SERVICIOS: "servicios",
+  INDUSTRIA: "industria",
+  TRANSPORTE: "transporte",
+  SALUD: "salud",
+};
+
+export const SLUG_SECTOR: Record<string, SectorCodigo> = {
+  tecnologia: "TECNOLOGIA",
+  comercio: "COMERCIO",
+  construccion: "CONSTRUCCION",
+  servicios: "SERVICIOS",
+  industria: "INDUSTRIA",
+  transporte: "TRANSPORTE",
+  salud: "SALUD",
+};
+
+export const CATEGORIA_LABEL: Record<CategoriaTimeline, string> = {
+  REGISTRAL: "Registrales",
+  CORPORATIVO: "Corporativos",
+  FINANCIERO: "Financieros",
+  NOTICIA: "Noticias",
+  ALERTA: "Alertas",
+};
+
+export const LISTA_LABEL: Record<TipoLista, string> = {
+  CLIENTES_ESTRATEGICOS: "Clientes estratégicos",
+  PROSPECTOS: "Prospectos",
+  PROVEEDORES: "Proveedores",
+  TECNOLOGIA: "Empresas de tecnología",
+  PERSONAL: "Personal",
+};
+
 export const RELACION_LABEL: Record<TipoRelacion, string> = {
   REPRESENTANTE_LEGAL: "Representante legal",
   SOCIO: "Socio",
   ESTABLECIMIENTO: "Establecimiento",
   PERSONA_OTRA_EMPRESA: "Persona en otra empresa",
   EMPRESA_RELACIONADA: "Empresa relacionada",
+  SUPLENTE: "Suplente",
+  MIEMBRO_JUNTA: "Junta directiva",
+  REVISOR_FISCAL: "Revisor fiscal",
+  OTRO_CARGO: "Otro cargo",
+  MATRIZ: "Matriz",
+  SUBSIDIARIA: "Subsidiaria",
 };
 
 export const EVENTO_LABEL: Record<TipoEvento, string> = {
@@ -66,10 +121,13 @@ export const EVENTO_LABEL: Record<TipoEvento, string> = {
   CAMBIO_TIPO_ORGANIZACION: "Cambio de tipo de organización",
   APERTURA_ESTABLECIMIENTO: "Apertura de establecimiento",
   OTRO_REGISTRAL: "Otro acto registral",
+  NOTICIA: "Noticia",
+  NOMBRAMIENTO: "Nombramiento",
+  CAMBIO_PARTICIPACION: "Cambio de participación",
 };
 
-export function formatMoney(value: number | null): string {
-  if (value === null) {
+export function formatMoney(value: number | null | undefined): string {
+  if (value === null || value === undefined || !Number.isFinite(value)) {
     return "Sin información";
   }
   return new Intl.NumberFormat("es-CO", {

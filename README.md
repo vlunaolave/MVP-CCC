@@ -87,7 +87,7 @@ Prisma con provider `sqlite`. El archivo queda en `prisma/dev.db` y no se versio
 
 ## Seed
 
-`npx prisma db seed` vacía las tablas de negocio y las vuelve a cargar desde `prisma/data`. El resultado de referencia es 22 empresas, 13 personas, 6 reglas demostrativas, 36 eventos o más y 16 alertas o más. El aviso visible en la aplicación recuerda que los datos no identifican personas ni empresas reales.
+`npx prisma db seed` vacía las tablas de negocio y las vuelve a cargar desde `prisma/data`. El resultado de referencia es 50 empresas, 50 personas, 7 sectores, 28 promedios sectoriales, 6 reglas demostrativas y 19 alertas (5 de ellas de Innova Valle). El aviso visible en la aplicación recuerda que los datos no identifican personas ni empresas reales. La etiqueta «Datos de demostración» marca el perfil, las finanzas y los sectores.
 
 ## Usuarios de prueba
 
@@ -103,7 +103,7 @@ Una clave incorrecta responde «Correo o contraseña incorrectos.» Una cuenta i
 
 ## Caso principal de demostración
 
-**INNOVA VALLE S.A.S.**, NIT `901847263-1`. Matrícula mercantil activa `543210-1` en la Cámara de Comercio de Cali, constituida el 2018-02-20, renovada el 2026-03-02. Actividad CIIU 6201, tamaño mediano, 48 empleados, domicilio en Cali. Representante legal Mariana Restrepo Quintero. Socios Mariana (60 %) y Andrés Felipe Caicedo Ríos (40 %). Establecimiento Innova Valle Lab. Empresa relacionada: Nube del Pacífico S.A.S. Helena Suárez Patiño fue representante hasta el 2024-01-16. El perfil muestra alertas de domicilio, actividad, representante y la renovación de 2026. El analista y el administrador ya la tienen en monitoreo.
+**INNOVA VALLE S.A.S.**, NIT `901847263-1`, id `co-innova`. Matrícula mercantil activa `543210-1` en la Cámara de Comercio de Cali, constituida el 2018-02-20, renovada el 2026-03-02. Actividad CIIU 6201, sector Tecnología, tamaño mediano, 48 empleados, domicilio en Cali. Representante legal Mariana Restrepo Quintero, con suplente, presidenta de junta y revisor fiscal vigentes. Accionistas Mariana (50 %), Andrés Felipe Caicedo Ríos (35 %) y Sara Isabel Londoño Vélez (15 %). Establecimientos Innova Valle Lab e Innova Valle Norte. Empresa relacionada: Nube del Pacífico S.A.S. Subsidiaria: INNOVA LABS DEL VALLE S.A.S. Estados financieros de demostración 2021–2025. Capital registral `180000000` y activos registrales `940000000`, distintos de los activos del estado 2025. El perfil muestra cinco alertas (domicilio, actividad, representante y dos renovaciones). El analista y el administrador ya la tienen en monitoreo.
 
 **Fundación Horizonte del Pacífico**, NIT `900554812-4`, es la ESAL completa. Registro activo, representante Lucía Elena Vargas Mora, miembro fundador Camilo Andrés Muñoz Díaz y sede en Cali. Capital y activos no están informados: la ficha dice «Sin información financiera disponible».
 
@@ -125,7 +125,7 @@ Una clave incorrecta responde «Correo o contraseña incorrectos.» Una cuenta i
 14. Entrar como administrador (`admin@demo.ccc`) a Administración.
 15. Ver usuarios y roles.
 
-El consultor ve inicio, empresas, el resumen registral y el dashboard. No ve monitoreo, alertas, relaciones, timeline ni administración. Escribir esas rutas lo lleva a acceso denegado.
+El consultor ve inicio, empresas, sectores, comparador, el resumen, los datos registrales, las finanzas y la comparación con el sector. No ve directivos, relaciones, grafo, timeline, alertas, monitoreo, listas ni administración. Escribir esas rutas lo lleva a acceso denegado.
 
 ## Limitaciones del MVP
 

@@ -11,6 +11,9 @@ import {
 import { useMemo, useState } from "react";
 import "@xyflow/react/dist/style.css";
 
+import Link from "next/link";
+
+import { Button } from "@/components/ui/button";
 import type { GraphNode, GraphPayload } from "@/shared/types/domain";
 import { cn } from "cn";
 
@@ -23,6 +26,12 @@ const shapeClass: Record<GraphNode["type"], string> = {
   persona: "rounded-full border border-dashed border-foreground/30 bg-muted min-w-36",
   establecimiento: "rounded-sm border-2 border-foreground/20 bg-card min-w-40",
   relacionada: "rounded-xl border border-primary bg-card text-primary min-w-44",
+  suplente: "rounded-md border-2 border-primary/60 bg-card min-w-40",
+  junta: "rounded-md border-2 border-foreground/30 bg-muted min-w-40",
+  revisor: "rounded-md border border-dashed border-primary bg-card min-w-40",
+  accionista: "rounded-full border border-primary/40 bg-card px-4 min-w-36",
+  matriz: "rounded-xl border-2 border-primary bg-card min-w-44",
+  subsidiaria: "rounded-xl border border-primary bg-secondary min-w-44",
 };
 
 function GraphCard({ data, type }: { data: GraphNode["data"]; type?: string }) {
@@ -46,6 +55,12 @@ const nodeTypes: NodeTypes = {
   persona: FlowNodeView,
   establecimiento: FlowNodeView,
   relacionada: FlowNodeView,
+  suplente: FlowNodeView,
+  junta: FlowNodeView,
+  revisor: FlowNodeView,
+  accionista: FlowNodeView,
+  matriz: FlowNodeView,
+  subsidiaria: FlowNodeView,
 };
 
 export function CompanyGraph({ graph }: { graph: GraphPayload }) {
@@ -99,6 +114,11 @@ export function CompanyGraph({ graph }: { graph: GraphPayload }) {
                 </div>
               ))}
             </dl>
+            {selected.data.empresaId ? (
+              <Button asChild>
+                <Link href={`/empresas/${selected.data.empresaId}`}>Ver perfil</Link>
+              </Button>
+            ) : null}
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">Selecciona un nodo para ver su detalle.</p>

@@ -10,6 +10,10 @@ const RESTRICTED: { test: (pathname: string) => boolean; roles: RolCodigo[] }[] 
     roles: ["ADMINISTRADOR", "ANALISTA"],
   },
   {
+    test: (pathname) => pathname.startsWith("/listas") || pathname.startsWith("/api/listas"),
+    roles: ["ADMINISTRADOR", "ANALISTA"],
+  },
+  {
     test: (pathname) => pathname.startsWith("/alertas") || pathname.startsWith("/api/alertas"),
     roles: ["ADMINISTRADOR", "ANALISTA"],
   },
