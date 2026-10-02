@@ -16,6 +16,10 @@ export const PERMISSION_CODES = [
   "admin.usuarios",
   "admin.roles",
   "admin.configuracion",
+  "sectores.ver",
+  "listas.ver",
+  "listas.gestionar",
+  "busquedas.guardar",
 ] as const;
 export type PermissionCode = (typeof PERMISSION_CODES)[number];
 
@@ -24,12 +28,38 @@ export type EstadoMatricula = "ACTIVA" | "SUSPENDIDA" | "CANCELADA" | "INACTIVA"
 export type EstadoJuridico = "VIGENTE" | "EN_LIQUIDACION" | "DISUELTA" | "INACTIVA";
 export type TamanoEmpresa = "MICRO" | "PEQUENA" | "MEDIANA" | "GRANDE";
 export type Severidad = "INFORMATIVA" | "ATENCION" | "IMPORTANTE";
+export const SECTOR_CODIGOS = [
+  "TECNOLOGIA",
+  "COMERCIO",
+  "CONSTRUCCION",
+  "SERVICIOS",
+  "INDUSTRIA",
+  "TRANSPORTE",
+  "SALUD",
+] as const;
+export type SectorCodigo = (typeof SECTOR_CODIGOS)[number];
+export type CategoriaEvento = "REGISTRAL" | "CORPORATIVO" | "FINANCIERO" | "NOTICIA";
+export type CategoriaTimeline = CategoriaEvento | "ALERTA";
+export const TIPO_LISTA = [
+  "CLIENTES_ESTRATEGICOS",
+  "PROSPECTOS",
+  "PROVEEDORES",
+  "TECNOLOGIA",
+  "PERSONAL",
+] as const;
+export type TipoLista = (typeof TIPO_LISTA)[number];
 export type TipoRelacion =
   | "REPRESENTANTE_LEGAL"
   | "SOCIO"
   | "ESTABLECIMIENTO"
   | "PERSONA_OTRA_EMPRESA"
-  | "EMPRESA_RELACIONADA";
+  | "EMPRESA_RELACIONADA"
+  | "SUPLENTE"
+  | "MIEMBRO_JUNTA"
+  | "REVISOR_FISCAL"
+  | "OTRO_CARGO"
+  | "MATRIZ"
+  | "SUBSIDIARIA";
 export type TipoEvento =
   | "CONSTITUCION"
   | "MATRICULA"
@@ -40,7 +70,33 @@ export type TipoEvento =
   | "CAMBIO_ESTADO_MATRICULA"
   | "CAMBIO_TIPO_ORGANIZACION"
   | "APERTURA_ESTABLECIMIENTO"
-  | "OTRO_REGISTRAL";
+  | "OTRO_REGISTRAL"
+  | "NOTICIA"
+  | "NOMBRAMIENTO"
+  | "CAMBIO_PARTICIPACION";
+export type GraphNodeType =
+  | "empresa"
+  | "representante"
+  | "socio"
+  | "persona"
+  | "establecimiento"
+  | "relacionada"
+  | "suplente"
+  | "junta"
+  | "revisor"
+  | "accionista"
+  | "matriz"
+  | "subsidiaria";
+export type SortKey =
+  | "razonSocial"
+  | "nit"
+  | "sector"
+  | "municipio"
+  | "revenue"
+  | "totalAssets"
+  | "employees"
+  | "estadoMatricula";
+export type SortDir = "asc" | "desc";
 
 export interface SessionUser {
   id: string;
@@ -67,6 +123,10 @@ export interface CompanyListItem {
   tamanoEmpresa: TamanoEmpresa;
   fechaUltimaActualizacion: string;
   monitoreada: boolean;
+  sector: SectorCodigo;
+  numeroEmpleados: number | null;
+  ingresos: number | null;
+  activosEstados: number | null;
 }
 
 export interface CompanyProfile extends CompanyListItem {
@@ -86,15 +146,172 @@ export interface CompanyProfile extends CompanyListItem {
   representanteLegal: string | null;
   resumen: string;
   antiguedad: string | null;
+  fuenteDatos: string;
+  cobertura: Cobertura;
+  ultimoPeriodo: UltimoPeriodo | null;
   relaciones: RelationItem[] | null;
   timeline: TimelineItem[] | null;
   alertas: AlertItem[] | null;
+}
+
+export interface Cobertura {
+  registral: "Completa" | "Incompleta";
+  financiera: string;
+  directivos: string;
+  propiedad: string;
+  relaciones: string;
+  ultimaActualizacion: string;
+}
+
+export interface UltimoPeriodo {
+  year: number;
+  ingresos: number;
+  activos: number;
+  patrimonio: number;
+  utilidad: number;
+  empleados: number;
+  variacionIngresos: number | null;
+  variacionActivos: number | null;
+  variacionPatrimonio: number | null;
+  variacionUtilidad: number | null;
+  variacionEmpleados: number | null;
+  anioAnterior: number | null;
+}
+
+export interface IndicatorSet {
+  margenNeto: number | null;
+  margenOperativo: number | null;
+  roa: number | null;
+  roe: number | null;
+  razonCorriente: number | null;
+  deudaPatrimonio: number | null;
+  crecimientoIngresos: number | null;
+  crecimientoActivos: number | null;
+}
+
+export interface FinancialPeriod {
+  year: number;
+  revenue: number;
+  ebitda: number;
+  netProfit: number;
+  totalAssets: number;
+  totalLiabilities: number;
+  equity: number;
+  employees: number;
+  currentAssets: number | null;
+  currentLiabilities: number | null;
+  indicadores: IndicatorSet;
+}
+
+export interface FinancePayload {
+  periodos: FinancialPeriod[];
+  indicadores: IndicatorSet;
+  fuente: "DEMO";
+}
+
+export interface SimilarItem {
+  id: string;
+  razonSocial: string;
+  nit: string;
+  sector: SectorCodigo;
+  ciudad: string;
+  tamanoEmpresa: TamanoEmpresa;
+  ingresos: number | null;
+  puntaje: number;
+}
+
+export interface SectorComparisonRow {
+  clave: string;
+  etiqueta: string;
+  formato: "money" | "percent" | "times" | "number";
+  empresa: number | null;
+  promedio: number | null;
+  absoluta: number | null;
+  porcentual: number | null;
+}
+
+export interface SectorComparisonPayload {
+  vacio?: boolean;
+  anio?: number;
+  filas?: SectorComparisonRow[];
+}
+
+export interface ComparadorColumna {
+  id: string;
+  razonSocial: string;
+  nit: string;
+  sector: SectorCodigo;
+  ciudad: string;
+  antiguedad: string | null;
+  empleados: number | null;
+  ingresos: number | null;
+  ebitda: number | null;
+  utilidad: number | null;
+  activos: number | null;
+  patrimonio: number | null;
+  margenNeto: number | null;
+  roe: number | null;
+  crecimientoIngresos: number | null;
+  anio: number | null;
+}
+
+export interface ComparadorPayload {
+  columnas: ComparadorColumna[];
+  ausentes: string[];
+}
+
+export interface SectorResumen {
+  codigo: SectorCodigo;
+  slug: string;
+  nombre: string;
+  empresas: number;
+  ingresosAgregados: number;
+  empleados: number;
+  crecimientoPromedio: number | null;
+}
+
+export interface SectorDetalle extends SectorResumen {
+  resumen: string;
+  principales: {
+    id: string;
+    razonSocial: string;
+    nit: string;
+    municipio: string;
+    ingresos: number | null;
+  }[];
+  porTamano: SeriesPoint[];
+  porMunicipio: SeriesPoint[];
+  evolucionIngresos: { year: number; ingresos: number }[];
+  indicadores: IndicatorSet;
+  anioBenchmark: number | null;
+}
+
+export interface WatchlistCompany {
+  id: string;
+  razonSocial: string;
+  nit: string;
+  sector: SectorCodigo;
+}
+
+export interface WatchlistItem {
+  id: string;
+  nombre: string;
+  tipo: TipoLista;
+  empresas: WatchlistCompany[];
+}
+
+export interface SavedSearchItem {
+  id: string;
+  nombre: string;
+  filtros: import("@/shared/types/filters").CompanyFilters;
+  createdAt: string;
 }
 
 export interface RelationItem {
   id: string;
   tipo: TipoRelacion;
   descripcion: string;
+  cargo: string | null;
   porcentajeParticipacion: number | null;
   fechaInicio: string;
   fechaFin: string | null;
@@ -112,7 +329,8 @@ export interface RelationItem {
 
 export interface TimelineItem {
   id: string;
-  tipo: TipoEvento;
+  tipo: TipoEvento | null;
+  categoria: CategoriaTimeline;
   fecha: string;
   titulo: string;
   descripcion: string;
@@ -147,10 +365,11 @@ export interface MonitoringItem {
 
 export interface GraphNode {
   id: string;
-  type: "empresa" | "representante" | "socio" | "persona" | "establecimiento" | "relacionada";
+  type: GraphNodeType;
   data: {
     titulo: string;
     subtitulo: string;
+    empresaId: string | null;
     campos: { etiqueta: string; valor: string }[];
   };
 }
@@ -174,19 +393,26 @@ export interface SeriesPoint {
 
 export interface DashboardPayload {
   kpis: {
+    disponibles: number;
     consultadas: number;
     monitoreadas: number;
     alertasGeneradas: number;
     mercantil: number;
     esal: number;
+    ingresosAgregados: number;
+    crecimientoPromedio: number | null;
   };
   empresasPorTipo: SeriesPoint[];
   empresasPorEstado: SeriesPoint[];
   empresasPorActividad: SeriesPoint[];
+  empresasPorSector: SeriesPoint[];
+  empresasPorDepartamento: SeriesPoint[];
+  empresasPorTamano: SeriesPoint[];
   alertasPorTipo: SeriesPoint[];
+  alertasPorCategoria: SeriesPoint[];
   alertasEnElTiempo: SeriesPoint[];
   monitoreadasPorMunicipio: SeriesPoint[];
-  opciones: { municipios: string[] };
+  opciones: { municipios: string[]; departamentos: string[]; sectores: SectorCodigo[]; tamanos: TamanoEmpresa[] };
 }
 
 export interface CompanySearchPayload {
@@ -196,6 +422,8 @@ export interface CompanySearchPayload {
   recientes: CompanyListItem[];
   opciones: {
     municipios: string[];
+    departamentos: string[];
+    sectores: SectorCodigo[];
     actividades: { codigo: string; descripcion: string }[];
   };
 }

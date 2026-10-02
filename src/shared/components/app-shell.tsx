@@ -4,7 +4,10 @@ import {
   Bell,
   Building2,
   Eye,
+  GitCompare,
+  Layers,
   LayoutDashboard,
+  ListChecks,
   LogOut,
   Menu,
   Search,
@@ -27,6 +30,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { useComparisonStore } from "@/features/comparison";
 import { apiClient } from "@/shared/lib/api-client";
 import { useUiStore } from "@/shared/lib/ui-store";
 import type { PermissionCode, SessionUser } from "@/shared/types/domain";
@@ -36,7 +40,10 @@ import { cn } from "cn";
 const NAV: { href: string; label: string; icon: typeof Building2; permission: PermissionCode }[] = [
   { href: "/", label: "Inicio", icon: Shield, permission: "inicio.ver" },
   { href: "/empresas", label: "Empresas", icon: Building2, permission: "empresas.consultar" },
+  { href: "/sectores", label: "Sectores", icon: Layers, permission: "sectores.ver" },
+  { href: "/comparador", label: "Comparador", icon: GitCompare, permission: "empresas.consultar" },
   { href: "/monitoreo", label: "Monitoreo", icon: Eye, permission: "monitoreo.ver" },
+  { href: "/listas", label: "Listas", icon: ListChecks, permission: "listas.ver" },
   { href: "/alertas", label: "Alertas", icon: Bell, permission: "alertas.ver" },
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, permission: "dashboard.ver" },
   { href: "/administracion", label: "Administración", icon: Settings, permission: "admin.usuarios" },
@@ -86,6 +93,7 @@ function Brand() {
 function Nav({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const user = useUiStore((state) => state.user);
+  const compared = useComparisonStore((state) => state.ids.length);
   const items = NAV.filter((item) => user?.permisos.includes(item.permission));
   return (
     <nav className="flex flex-1 flex-col gap-1 p-3" aria-label="Principal">
@@ -104,7 +112,10 @@ function Nav({ onNavigate }: { onNavigate?: () => void }) {
             )}
           >
             <Icon className="size-4" aria-hidden="true" />
-            {item.label}
+            <span className="flex-1">{item.label}</span>
+            {item.href === "/comparador" && compared > 0 ? (
+              <span className="rounded-full bg-primary/15 px-1.5 text-xs">{compared}</span>
+            ) : null}
           </Link>
         );
       })}

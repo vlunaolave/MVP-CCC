@@ -13,11 +13,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { apiClient } from "@/shared/lib/api-client";
 import { useUiStore } from "@/shared/lib/ui-store";
 import { EmptyState, ErrorState, LoadingBlock } from "@/shared/components/screen-states";
-import type { DashboardPayload, SeriesPoint } from "@/shared/types/domain";
+import type { DashboardPayload, SeriesPoint, TamanoEmpresa } from "@/shared/types/domain";
+import { SECTOR_CODIGOS } from "@/shared/types/domain";
+import { formatPercent } from "@/server/services/financial-indicators";
+import { SECTOR_LABEL, TAMANO_LABEL, formatMoney } from "@/shared/utils/labels";
 
 const ALL = "todos";
 
-const emptyFilters = { desde: "", hasta: "", tipoRegistro: ALL, municipio: ALL, estadoMatricula: ALL };
+const emptyFilters = {
+  desde: "",
+  hasta: "",
+  tipoRegistro: ALL,
+  municipio: ALL,
+  departamento: ALL,
+  estadoMatricula: ALL,
+  sector: ALL,
+  tamanoEmpresa: ALL,
+};
 
 export function DashboardScreen() {
   const user = useUiStore((state) => state.user);
@@ -32,7 +44,10 @@ export function DashboardScreen() {
           hasta: filters.hasta || undefined,
           tipoRegistro: filters.tipoRegistro === ALL ? undefined : filters.tipoRegistro,
           municipio: filters.municipio === ALL ? undefined : filters.municipio,
+          departamento: filters.departamento === ALL ? undefined : filters.departamento,
           estadoMatricula: filters.estadoMatricula === ALL ? undefined : filters.estadoMatricula,
+          sector: filters.sector === ALL ? undefined : filters.sector,
+          tamanoEmpresa: filters.tamanoEmpresa === ALL ? undefined : filters.tamanoEmpresa,
         },
       });
       return data;
@@ -47,7 +62,7 @@ export function DashboardScreen() {
         <p className="mt-1 text-sm text-muted-foreground">Indicadores del padrón simulado. Los filtros cambian todas las series.</p>
       </div>
       <form
-        className="grid gap-3 rounded-xl border bg-card p-4 shadow-sm md:grid-cols-5"
+        className="grid gap-3 rounded-xl border bg-card p-4 shadow-sm md:grid-cols-4"
         onSubmit={(event) => {
           event.preventDefault();
           setFilters(draft);
@@ -72,6 +87,24 @@ export function DashboardScreen() {
             </SelectItem>
           ))}
         </Choice>
+        <Choice label="Departamento" value={draft.departamento} onChange={(departamento) => setDraft({ ...draft, departamento })}>
+          <SelectItem value={ALL}>Todos</SelectItem>
+          {(query.data?.opciones.departamentos ?? []).map((departamento) => (
+            <SelectItem key={departamento} value={departamento}>{departamento}</SelectItem>
+          ))}
+        </Choice>
+        <Choice label="Sector" value={draft.sector} onChange={(sector) => setDraft({ ...draft, sector })}>
+          <SelectItem value={ALL}>Todos</SelectItem>
+          {SECTOR_CODIGOS.map((sector) => (
+            <SelectItem key={sector} value={sector}>{SECTOR_LABEL[sector]}</SelectItem>
+          ))}
+        </Choice>
+        <Choice label="Tamaño" value={draft.tamanoEmpresa} onChange={(tamanoEmpresa) => setDraft({ ...draft, tamanoEmpresa })}>
+          <SelectItem value={ALL}>Todos</SelectItem>
+          {(Object.keys(TAMANO_LABEL) as TamanoEmpresa[]).map((tamano) => (
+            <SelectItem key={tamano} value={tamano}>{TAMANO_LABEL[tamano]}</SelectItem>
+          ))}
+        </Choice>
         <Choice label="Estado" value={draft.estadoMatricula} onChange={(estadoMatricula) => setDraft({ ...draft, estadoMatricula })}>
           <SelectItem value={ALL}>Todos</SelectItem>
           <SelectItem value="ACTIVA">Activa</SelectItem>
@@ -79,7 +112,7 @@ export function DashboardScreen() {
           <SelectItem value="CANCELADA">Cancelada</SelectItem>
           <SelectItem value="INACTIVA">Inactiva</SelectItem>
         </Choice>
-        <div className="flex items-end gap-2 md:col-span-5">
+        <div className="flex items-end gap-2 md:col-span-4">
           <Button type="submit">Aplicar filtros</Button>
           <Button
             type="button"
@@ -97,25 +130,32 @@ export function DashboardScreen() {
       {query.isError ? <ErrorState onRetry={() => void query.refetch()} /> : null}
       {query.data ? (
         <>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-            <Kpi label="Empresas consultadas" value={query.data.kpis.consultadas} />
-            <Kpi label="Empresas monitoreadas" value={query.data.kpis.monitoreadas} />
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <Kpi label="Empresas disponibles" value={String(query.data.kpis.disponibles)} />
+            <Kpi label="Empresas consultadas" value={String(query.data.kpis.consultadas)} />
+            <Kpi label="Empresas monitoreadas" value={String(query.data.kpis.monitoreadas)} />
             {canAlerts ? (
               <Link href="/alertas" className="rounded-xl border bg-card p-4 shadow-sm hover:border-primary/40">
                 <p className="text-xs tracking-wide text-muted-foreground uppercase">Alertas generadas</p>
                 <p className="mt-2 text-3xl font-semibold">{query.data.kpis.alertasGeneradas}</p>
               </Link>
             ) : (
-              <Kpi label="Alertas generadas" value={query.data.kpis.alertasGeneradas} />
+              <Kpi label="Alertas generadas" value={String(query.data.kpis.alertasGeneradas)} />
             )}
-            <Kpi label="Registro Mercantil" value={query.data.kpis.mercantil} />
-            <Kpi label="ESAL" value={query.data.kpis.esal} />
+            <Kpi label="Registro Mercantil" value={String(query.data.kpis.mercantil)} />
+            <Kpi label="ESAL" value={String(query.data.kpis.esal)} />
+            <Kpi label="Ingresos agregados" value={formatMoney(query.data.kpis.ingresosAgregados)} />
+            <Kpi label="Crecimiento promedio" value={formatPercent(query.data.kpis.crecimientoPromedio, true)} />
           </div>
           <div className="grid gap-4 lg:grid-cols-2">
             <ChartCard title="Empresas por tipo" data={query.data.empresasPorTipo} />
             <ChartCard title="Empresas por estado" data={query.data.empresasPorEstado} />
             <ChartCard title="Empresas por actividad económica" data={query.data.empresasPorActividad} horizontal />
+            <ChartCard title="Empresas por sector" data={query.data.empresasPorSector} />
+            <ChartCard title="Empresas por departamento" data={query.data.empresasPorDepartamento} />
+            <ChartCard title="Empresas por tamaño" data={query.data.empresasPorTamano} />
             <ChartCard title="Alertas por tipo" data={query.data.alertasPorTipo} />
+            <ChartCard title="Alertas por categoría" data={query.data.alertasPorCategoria} />
             <ChartCard title="Alertas generadas en el tiempo" data={query.data.alertasEnElTiempo} line />
             <ChartCard title="Empresas monitoreadas por municipio" data={query.data.monitoreadasPorMunicipio} />
           </div>
@@ -125,7 +165,7 @@ export function DashboardScreen() {
   );
 }
 
-function Kpi({ label, value }: { label: string; value: number }) {
+function Kpi({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border bg-card p-4 shadow-sm">
       <p className="text-xs tracking-wide text-muted-foreground uppercase">{label}</p>

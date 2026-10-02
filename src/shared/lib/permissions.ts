@@ -16,6 +16,10 @@ export const ROLE_PERMISSIONS: Record<RolCodigo, PermissionCode[]> = {
     "admin.usuarios",
     "admin.roles",
     "admin.configuracion",
+    "sectores.ver",
+    "listas.ver",
+    "listas.gestionar",
+    "busquedas.guardar",
   ],
   ANALISTA: [
     "inicio.ver",
@@ -29,8 +33,19 @@ export const ROLE_PERMISSIONS: Record<RolCodigo, PermissionCode[]> = {
     "alertas.ver",
     "alertas.marcar_leida",
     "dashboard.ver",
+    "sectores.ver",
+    "listas.ver",
+    "listas.gestionar",
+    "busquedas.guardar",
   ],
-  CONSULTOR: ["inicio.ver", "empresas.consultar", "empresas.perfil", "dashboard.ver"],
+  CONSULTOR: [
+    "inicio.ver",
+    "empresas.consultar",
+    "empresas.perfil",
+    "dashboard.ver",
+    "sectores.ver",
+    "busquedas.guardar",
+  ],
 };
 
 export function permissionsForRole(rol: RolCodigo): PermissionCode[] {

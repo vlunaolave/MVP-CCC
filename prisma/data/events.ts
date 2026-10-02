@@ -1,12 +1,28 @@
 import { companies } from "./companies";
 import type { EventSeed } from "./types";
 
+type EventDraft = Omit<EventSeed, "categoria">;
+
+function categoriaDe(tipo: EventDraft["tipo"]): EventSeed["categoria"] {
+  if (tipo === "NOTICIA") {
+    return "NOTICIA";
+  }
+  if (tipo === "CAMBIO_REPRESENTANTE" || tipo === "NOMBRAMIENTO" || tipo === "CAMBIO_PARTICIPACION") {
+    return "CORPORATIVO";
+  }
+  return "REGISTRAL";
+}
+
+function stamp(event: EventDraft): EventSeed {
+  return { ...event, categoria: categoriaDe(event.tipo) };
+}
+
 function previousYear(iso: string): string {
   const [year, month, day] = iso.split("-");
   return `${Number(year) - 1}-${month}-${day}`;
 }
 
-function fuenteOf(companyId: string): EventSeed["fuente"] {
+function fuenteOf(companyId: string): EventDraft["fuente"] {
   const company = companies.find((item) => item.id === companyId);
   return company?.tipoRegistro === "ESAL" ? "ESAL" : "REGISTRO_MERCANTIL";
 }
@@ -24,7 +40,7 @@ const renewalAlertCompanies = new Set([
 
 const handcrafted = new Set(["co-innova", "co-horizonte"]);
 
-const innova: EventSeed[] = [
+const innova: EventDraft[] = [
   {
     id: "ev-innova-const",
     companyId: "co-innova",
@@ -109,9 +125,36 @@ const innova: EventSeed[] = [
     fuente: "REGISTRO_MERCANTIL",
     metadata: { valorAnterior: "2025-03-04", valorNuevo: "2026-03-02" },
   },
+  {
+    id: "ev-innova-junta",
+    companyId: "co-innova",
+    tipo: "NOMBRAMIENTO",
+    fecha: "2021-03-01",
+    titulo: "Nombramiento de presidenta de junta",
+    descripcion: "Isabel Cruz Londoño asume como presidenta de junta.",
+    fuente: "DEMO",
+  },
+  {
+    id: "ev-innova-noticia-producto",
+    companyId: "co-innova",
+    tipo: "NOTICIA",
+    fecha: "2025-09-12",
+    titulo: "Innova Valle abre línea de producto con su subsidiaria",
+    descripcion: "La compañía anuncia una línea de producto desarrollada con INNOVA LABS DEL VALLE S.A.S.",
+    fuente: "DEMO",
+  },
+  {
+    id: "ev-innova-noticia-rueda",
+    companyId: "co-innova",
+    tipo: "NOTICIA",
+    fecha: "2026-01-20",
+    titulo: "Participación en rueda de negocios de software del Valle",
+    descripcion: "Innova Valle participa en la rueda de negocios de software organizada en Cali.",
+    fuente: "DEMO",
+  },
 ];
 
-const horizonte: EventSeed[] = [
+const horizonte: EventDraft[] = [
   {
     id: "ev-horizonte-const",
     companyId: "co-horizonte",
@@ -192,7 +235,7 @@ const horizonte: EventSeed[] = [
   },
 ];
 
-const specials: EventSeed[] = [
+const specials: EventDraft[] = [
   {
     id: "ev-barrio-org",
     companyId: "co-barrio",
@@ -225,11 +268,11 @@ const specials: EventSeed[] = [
   },
 ];
 
-const generated: EventSeed[] = companies
+const generated: EventDraft[] = companies
   .filter((company) => !handcrafted.has(company.id))
   .flatMap((company) => {
     const fuente = fuenteOf(company.id);
-    const items: EventSeed[] = [
+    const items: EventDraft[] = [
       {
         id: `ev-${company.id}-const`,
         companyId: company.id,
@@ -250,7 +293,7 @@ const generated: EventSeed[] = companies
       },
     ];
     if (company.fechaRenovacion) {
-      const renewal: EventSeed = {
+      const renewal: EventDraft = {
         id: `ev-${company.id}-ren`,
         companyId: company.id,
         tipo: "RENOVACION",
@@ -270,6 +313,15 @@ const generated: EventSeed[] = companies
     return items;
   });
 
-export const events: EventSeed[] = [...innova, ...horizonte, ...specials, ...generated].sort((a, b) =>
-  a.fecha.localeCompare(b.fecha),
-);
+export const events: EventSeed[] = [...innova, ...horizonte, ...specials, ...generated]
+  .map((event) => {
+    if (event.companyId === "co-innova" && event.tipo === "RENOVACION" && event.fecha === "2025-03-04") {
+      return {
+        ...event,
+        metadata: { valorAnterior: "2024-03-04", valorNuevo: "2025-03-04" },
+      };
+    }
+    return event;
+  })
+  .map(stamp)
+  .sort((a, b) => a.fecha.localeCompare(b.fecha));

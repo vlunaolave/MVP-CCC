@@ -13,4 +13,28 @@ export class ApiCompanyRepository implements CompanyRepository {
   graph(): Promise<never> {
     throw new RepositoryNotImplemented();
   }
+
+  finances(): Promise<never> {
+    throw new RepositoryNotImplemented();
+  }
+
+  similares(): Promise<never> {
+    throw new RepositoryNotImplemented();
+  }
+
+  versusSector(): Promise<never> {
+    throw new RepositoryNotImplemented();
+  }
+
+  compare(): Promise<never> {
+    throw new RepositoryNotImplemented();
+  }
+
+  sectors(): Promise<never> {
+    throw new RepositoryNotImplemented();
+  }
+
+  sectorDetail(): Promise<never> {
+    throw new RepositoryNotImplemented();
+  }
 }

@@ -2,7 +2,7 @@ import bcrypt from "bcryptjs";
 
 import { prisma } from "@/shared/lib/prisma";
 import { hasPermission } from "@/shared/lib/permissions";
-import type { CompanyProfile, RolCodigo, SessionUser } from "@/shared/types/domain";
+import type { CompanyProfile, RolCodigo, SectorCodigo, SessionUser } from "@/shared/types/domain";
 import type { AlertFilters, CompanyFilters, DashboardFilters, MonitoringFilters } from "@/shared/types/filters";
 import { AppError } from "@/server/errors";
 import {
@@ -12,8 +12,10 @@ import {
   SqliteDashboardRepository,
   SqliteMonitoringRepository,
   SqliteRoleRepository,
+  SqliteSavedSearchRepository,
   SqliteSettingsRepository,
   SqliteUserRepository,
+  SqliteWatchlistRepository,
 } from "@/server/repositories/sqlite";
 
 const companies = new SqliteCompanyRepository(prisma);
@@ -24,6 +26,8 @@ const users = new SqliteUserRepository(prisma);
 const roles = new SqliteRoleRepository(prisma);
 const settings = new SqliteSettingsRepository(prisma);
 const audit = new SqliteAuditRepository(prisma);
+const watchlists = new SqliteWatchlistRepository(prisma);
+const savedSearches = new SqliteSavedSearchRepository(prisma);
 
 function redactProfile(profile: CompanyProfile, rol: RolCodigo): CompanyProfile {
   return {
@@ -53,6 +57,84 @@ export const companyService = {
   },
   graph(id: string) {
     return companies.graph(id);
+  },
+  async finances(id: string) {
+    const payload = await companies.finances(id);
+    if (!payload) {
+      throw new AppError("La empresa no existe.", 404, "NOT_FOUND");
+    }
+    return payload;
+  },
+  async similares(id: string) {
+    const items = await companies.similares(id);
+    if (!items) {
+      throw new AppError("La empresa no existe.", 404, "NOT_FOUND");
+    }
+    return { items };
+  },
+  async versusSector(id: string) {
+    const payload = await companies.versusSector(id);
+    if (!payload) {
+      throw new AppError("La empresa no existe.", 404, "NOT_FOUND");
+    }
+    return payload;
+  },
+  compare(ids: string[]) {
+    return companies.compare(ids);
+  },
+};
+
+export const sectorService = {
+  list() {
+    return companies.sectors();
+  },
+  async detail(codigo: SectorCodigo) {
+    const detail = await companies.sectorDetail(codigo);
+    if (!detail) {
+      throw new AppError("El sector no existe.", 404, "NOT_FOUND");
+    }
+    return detail;
+  },
+};
+
+export const listService = {
+  list(user: SessionUser) {
+    return watchlists.list(user.id);
+  },
+  async add(user: SessionUser, watchlistId: string, companyId: string) {
+    const result = await watchlists.add(user.id, watchlistId, companyId);
+    if (result === "missing-list") {
+      throw new AppError("La lista no existe.", 404, "NOT_FOUND");
+    }
+    if (result === "missing-company") {
+      throw new AppError("La empresa no existe.", 404, "NOT_FOUND");
+    }
+    return { estado: result };
+  },
+  async remove(user: SessionUser, watchlistId: string, companyId: string) {
+    const removed = await watchlists.remove(user.id, watchlistId, companyId);
+    if (!removed) {
+      throw new AppError("La empresa no está en la lista.", 404, "NOT_FOUND");
+    }
+  },
+};
+
+export const savedSearchService = {
+  list(user: SessionUser) {
+    return savedSearches.list(user.id);
+  },
+  async create(user: SessionUser, nombre: string, filtros: CompanyFilters) {
+    const created = await savedSearches.create(user.id, nombre, filtros);
+    if (created === "limit") {
+      throw new AppError("Puedes guardar hasta 20 búsquedas", 400, "LIMIT");
+    }
+    return created;
+  },
+  async remove(user: SessionUser, id: string) {
+    const removed = await savedSearches.remove(user.id, id);
+    if (!removed) {
+      throw new AppError("La búsqueda no existe.", 404, "NOT_FOUND");
+    }
   },
 };
 

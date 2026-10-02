@@ -11,6 +11,15 @@ export const establishments: EstablishmentSeed[] = [
     estado: "ABIERTO",
   },
   {
+    id: "est-innova-norte",
+    companyId: "co-innova",
+    nombre: "Innova Valle Norte",
+    direccion: "Calle 70 # 4-12",
+    municipio: "Cali",
+    departamento: "Valle del Cauca",
+    estado: "ABIERTO",
+  },
+  {
     id: "est-horizonte",
     companyId: "co-horizonte",
     nombre: "Sede Horizonte",

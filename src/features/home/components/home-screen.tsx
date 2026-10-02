@@ -1,19 +1,29 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { apiClient } from "@/shared/lib/api-client";
+import { Input } from "@/components/ui/input";
+import { apiClient, apiErrorMessage } from "@/shared/lib/api-client";
 import { useUiStore } from "@/shared/lib/ui-store";
 import { EmptyState, ErrorState, LoadingBlock } from "@/shared/components/screen-states";
 import { EnrollmentBadge, SeverityBadge } from "@/shared/components/status-badge";
-import type { AlertItem, CompanySearchPayload, MonitoringItem } from "@/shared/types/domain";
+import type { AlertItem, CompanySearchPayload, MonitoringItem, SavedSearchItem, SectorResumen } from "@/shared/types/domain";
+import type { CompanyFilters } from "@/shared/types/filters";
+import { SECTOR_CODIGOS } from "@/shared/types/domain";
 import { formatDisplayDate, greetingFor } from "@/shared/utils/dates";
+import { SECTOR_LABEL, SECTOR_SLUG } from "@/shared/utils/labels";
 
 export function HomeScreen() {
+  const router = useRouter();
   const user = useUiStore((state) => state.user);
+  const queryClient = useQueryClient();
+  const [q, setQ] = useState("");
   const canMonitor = user?.permisos.includes("monitoreo.ver") ?? false;
   const canAlerts = user?.permisos.includes("alertas.ver") ?? false;
   const companies = useQuery({
@@ -30,6 +40,31 @@ export function HomeScreen() {
       const { data } = await apiClient.get<{ items: MonitoringItem[] }>("/api/monitoreo");
       return data.items;
     },
+  });
+  const sectors = useQuery({
+    queryKey: ["sectores"],
+    enabled: user?.permisos.includes("sectores.ver") ?? false,
+    queryFn: async () => {
+      const { data } = await apiClient.get<{ items: SectorResumen[] }>("/api/sectores");
+      return data.items;
+    },
+  });
+  const searches = useQuery({
+    queryKey: ["busquedas", user?.id ?? "anon"],
+    enabled: Boolean(user),
+    queryFn: async () => {
+      const { data } = await apiClient.get<{ items: SavedSearchItem[] }>("/api/busquedas");
+      return data.items;
+    },
+  });
+  const removeSearch = useMutation({
+    mutationFn: async (id: string) => {
+      await apiClient.delete(`/api/busquedas/${id}`);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["busquedas", user?.id ?? "anon"] });
+    },
+    onError: (error) => toast.error(apiErrorMessage(error, "No se pudo borrar la búsqueda.")),
   });
   const alerts = useQuery({
     queryKey: ["alerts", { recientes: true }],
@@ -49,10 +84,26 @@ export function HomeScreen() {
   return (
     <div className="grid gap-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">{greetingFor(user.nombre)}</h1>
-        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          {user.plataformaNombre}. El padrón de demostración reúne matrícula mercantil y ESAL de la Cámara de Comercio de Cali.
-        </p>
+        <p className="text-sm text-muted-foreground">{greetingFor(user.nombre)}</p>
+        <form
+          className="mt-3"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const value = q.trim();
+            router.push(value ? `/empresas?q=${encodeURIComponent(value)}` : "/empresas");
+          }}
+        >
+          <label htmlFor="home-search" className="sr-only">
+            Buscar empresa por nombre, NIT, actividad o sector
+          </label>
+          <Input
+            id="home-search"
+            value={q}
+            onChange={(event) => setQ(event.target.value)}
+            placeholder="Buscar empresa por nombre, NIT, actividad o sector"
+            className="h-12 text-base"
+          />
+        </form>
       </div>
       {loading ? <LoadingBlock rows={2} /> : null}
       {error ? (
@@ -143,9 +194,50 @@ export function HomeScreen() {
             </CardContent>
           </Card>
         ) : null}
+        <Card>
+          <CardHeader>
+            <CardTitle>Sectores</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-2 sm:grid-cols-2">
+            {SECTOR_CODIGOS.map((codigo) => {
+              const match = sectors.data?.find((sector) => sector.codigo === codigo);
+              return (
+                <Link key={codigo} href={`/sectores/${SECTOR_SLUG[codigo]}`} className="rounded-lg border px-3 py-2 text-sm hover:bg-muted">
+                  {SECTOR_LABEL[codigo]}
+                  {match ? ` · ${match.empresas}` : ""}
+                </Link>
+              );
+            })}
+          </CardContent>
+        </Card>
+        <Card className="xl:col-span-2">
+          <CardHeader>
+            <CardTitle>Búsquedas guardadas</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-2">
+            {searches.data && searches.data.length === 0 ? <EmptyState title="Todavía no guardas búsquedas." /> : null}
+            {searches.data?.map((search) => (
+              <div key={search.id} className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2">
+                <Link href={searchHref(search.filtros)} className="text-sm font-medium hover:underline">{search.nombre}</Link>
+                <Button type="button" variant="outline" size="sm" onClick={() => removeSearch.mutate(search.id)}>Quitar</Button>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
+}
+
+function searchHref(filtros: CompanyFilters) {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(filtros)) {
+    if (value !== undefined && value !== null && String(value) !== "") {
+      params.set(key, String(value));
+    }
+  }
+  const query = params.toString();
+  return query ? `/empresas?${query}` : "/empresas";
 }
 
 function Kpi({ label, value, href }: { label: string; value: number; href: string }) {

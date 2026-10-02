@@ -25,6 +25,8 @@ export interface CompanySeed {
   fechaConstitucion: string | null;
   estado: "VIGENTE" | "EN_LIQUIDACION" | "DISUELTA" | "INACTIVA";
   representanteLegal: string | null;
+  sector: "TECNOLOGIA" | "COMERCIO" | "CONSTRUCCION" | "SERVICIOS" | "INDUSTRIA" | "TRANSPORTE" | "SALUD";
+  fuenteDatos: "DEMO";
 }
 
 export interface PersonSeed {
@@ -52,11 +54,18 @@ export interface RelationSeed {
     | "SOCIO"
     | "ESTABLECIMIENTO"
     | "PERSONA_OTRA_EMPRESA"
-    | "EMPRESA_RELACIONADA";
+    | "EMPRESA_RELACIONADA"
+    | "SUPLENTE"
+    | "MIEMBRO_JUNTA"
+    | "REVISOR_FISCAL"
+    | "OTRO_CARGO"
+    | "MATRIZ"
+    | "SUBSIDIARIA";
   personId?: string;
   relatedCompanyId?: string;
   establishmentId?: string;
   descripcion: string;
+  cargo?: string;
   porcentajeParticipacion?: number;
   fechaInicio: string;
   fechaFin?: string;
@@ -81,11 +90,15 @@ export interface EventSeed {
     | "CAMBIO_ESTADO_MATRICULA"
     | "CAMBIO_TIPO_ORGANIZACION"
     | "APERTURA_ESTABLECIMIENTO"
-    | "OTRO_REGISTRAL";
+    | "OTRO_REGISTRAL"
+    | "NOTICIA"
+    | "NOMBRAMIENTO"
+    | "CAMBIO_PARTICIPACION";
+  categoria: "REGISTRAL" | "CORPORATIVO" | "FINANCIERO" | "NOTICIA";
   fecha: string;
   titulo: string;
   descripcion: string;
-  fuente: "REGISTRO_MERCANTIL" | "ESAL";
+  fuente: "REGISTRO_MERCANTIL" | "ESAL" | "DEMO";
   metadata?: ChangeMetadata;
 }
 
@@ -128,6 +141,43 @@ export interface SettingSeed {
   descripcion: string;
 }
 
+export interface FinancialSeed {
+  id: string;
+  companyId: string;
+  year: number;
+  revenue: number;
+  ebitda: number;
+  netProfit: number;
+  totalAssets: number;
+  totalLiabilities: number;
+  equity: number;
+  employees: number;
+  currentAssets?: number;
+  currentLiabilities?: number;
+}
+
+export interface BenchmarkSeed {
+  sector: CompanySeed["sector"];
+  year: number;
+  avgRevenue: number;
+  avgEbitda: number;
+  avgNetProfit: number;
+  avgAssets: number;
+  avgLiabilities: number;
+  avgEquity: number;
+  avgEmployees: number;
+  avgRevenueGrowth: number;
+  avgAssetGrowth: number;
+}
+
+export interface WatchlistSeed {
+  id: string;
+  userEmail: string;
+  nombre: string;
+  tipo: "CLIENTES_ESTRATEGICOS" | "PROSPECTOS" | "PROVEEDORES" | "TECNOLOGIA" | "PERSONAL";
+  companyIds: string[];
+}
+
 export interface ReferenceDataset {
   companies: CompanySeed[];
   people: PersonSeed[];
@@ -139,4 +189,7 @@ export interface ReferenceDataset {
   monitoring: MonitoringSeed[];
   initialAudit: AuditSeed[];
   settings: SettingSeed[];
+  financials: FinancialSeed[];
+  benchmarks: BenchmarkSeed[];
+  watchlists: WatchlistSeed[];
 }

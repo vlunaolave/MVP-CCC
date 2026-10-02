@@ -1,4 +1,5 @@
 import { companies } from "./companies";
+import { extraRepresentatives } from "./companies-extra";
 import { establishments } from "./establishments";
 import { personName } from "./people";
 import type { RelationSeed } from "./types";
@@ -26,6 +27,7 @@ const currentRepresentative: Record<string, { personId: string; desde: string }>
   "co-semilla": { personId: "per-lucia", desde: "2017-03-14" },
   "co-metal": { personId: "per-elena", desde: "2004-01-09" },
   "co-bahia": { personId: "per-valeria", desde: "2020-09-01" },
+  ...extraRepresentatives,
 };
 
 const representativeRelations: RelationSeed[] = companies.map((company) => {
@@ -61,7 +63,7 @@ const extraRelations: RelationSeed[] = [
     tipo: "SOCIO",
     personId: "per-mariana",
     descripcion: "Socia de INNOVA VALLE S.A.S.",
-    porcentajeParticipacion: 60,
+    porcentajeParticipacion: 50,
     fechaInicio: "2018-02-20",
     vigente: true,
   },
@@ -71,7 +73,7 @@ const extraRelations: RelationSeed[] = [
     tipo: "SOCIO",
     personId: "per-andres",
     descripcion: "Socio de INNOVA VALLE S.A.S.",
-    porcentajeParticipacion: 40,
+    porcentajeParticipacion: 35,
     fechaInicio: "2018-02-20",
     vigente: true,
   },
@@ -90,6 +92,71 @@ const extraRelations: RelationSeed[] = [
     tipo: "EMPRESA_RELACIONADA",
     relatedCompanyId: "co-nube",
     descripcion: "Aliado tecnológico de infraestructura.",
+    fechaInicio: "2024-06-01",
+    vigente: true,
+  },
+  {
+    id: "rel-suplente-innova",
+    companyId: "co-innova",
+    tipo: "SUPLENTE",
+    personId: "per-tomas",
+    descripcion: "Suplente del representante legal.",
+    fechaInicio: "2024-01-16",
+    vigente: true,
+  },
+  {
+    id: "rel-junta-innova",
+    companyId: "co-innova",
+    tipo: "MIEMBRO_JUNTA",
+    personId: "per-isabel",
+    cargo: "Presidenta de junta",
+    descripcion: "Presidenta de junta de INNOVA VALLE S.A.S.",
+    fechaInicio: "2021-03-01",
+    vigente: true,
+  },
+  {
+    id: "rel-revisor-innova",
+    companyId: "co-innova",
+    tipo: "REVISOR_FISCAL",
+    personId: "per-jorge",
+    descripcion: "Revisor fiscal de INNOVA VALLE S.A.S.",
+    fechaInicio: "2023-04-01",
+    vigente: true,
+  },
+  {
+    id: "rel-socio-innova-sara",
+    companyId: "co-innova",
+    tipo: "SOCIO",
+    personId: "per-sara",
+    descripcion: "Socia de INNOVA VALLE S.A.S.",
+    porcentajeParticipacion: 15,
+    fechaInicio: "2022-06-01",
+    vigente: true,
+  },
+  {
+    id: "rel-est-innova-norte",
+    companyId: "co-innova",
+    tipo: "ESTABLECIMIENTO",
+    establishmentId: "est-innova-norte",
+    descripcion: "Establecimiento Innova Valle Norte.",
+    fechaInicio: "2025-02-01",
+    vigente: true,
+  },
+  {
+    id: "rel-sub-innova-labs",
+    companyId: "co-innova",
+    tipo: "SUBSIDIARIA",
+    relatedCompanyId: "co-innova-labs",
+    descripcion: "Subsidiaria de desarrollo de producto.",
+    fechaInicio: "2024-06-01",
+    vigente: true,
+  },
+  {
+    id: "rel-matriz-labs-innova",
+    companyId: "co-innova-labs",
+    tipo: "MATRIZ",
+    relatedCompanyId: "co-innova",
+    descripcion: "Matriz: INNOVA VALLE S.A.S.",
     fechaInicio: "2024-06-01",
     vigente: true,
   },
@@ -151,7 +218,7 @@ const extraRelations: RelationSeed[] = [
 ];
 
 for (const establishment of establishments) {
-  if (establishment.id === "est-innova" || establishment.id === "est-horizonte") {
+  if (establishment.id === "est-innova" || establishment.id === "est-horizonte" || establishment.id === "est-innova-norte") {
     continue;
   }
   extraRelations.push({

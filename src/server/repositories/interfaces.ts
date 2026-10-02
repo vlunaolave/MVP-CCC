@@ -7,9 +7,18 @@ import type {
   AppSettingItem,
   CompanyListItem,
   CompanyProfile,
+  ComparadorPayload,
   DashboardPayload,
+  FinancePayload,
   GraphPayload,
   MonitoringItem,
+  SavedSearchItem,
+  SectorCodigo,
+  SectorComparisonPayload,
+  SectorDetalle,
+  SectorResumen,
+  SimilarItem,
+  WatchlistItem,
 } from "@/shared/types/domain";
 import type { AlertFilters, CompanyFilters, DashboardFilters, MonitoringFilters } from "@/shared/types/filters";
 
@@ -25,6 +34,12 @@ export interface CompanyRepository {
   }>;
   findById(id: string, userId: string): Promise<CompanyProfile | null>;
   graph(id: string): Promise<GraphPayload | null>;
+  finances(id: string): Promise<FinancePayload | null>;
+  similares(id: string): Promise<SimilarItem[] | null>;
+  versusSector(id: string): Promise<SectorComparisonPayload | null>;
+  compare(ids: string[]): Promise<ComparadorPayload>;
+  sectors(): Promise<SectorResumen[]>;
+  sectorDetail(codigo: SectorCodigo): Promise<SectorDetalle | null>;
 }
 
 export interface MonitoringRepository {
@@ -70,4 +85,16 @@ export interface SettingsRepository {
 
 export interface RoleRepository {
   list(): Promise<AdminRole[]>;
+}
+
+export interface WatchlistRepository {
+  list(userId: string): Promise<WatchlistItem[]>;
+  add(userId: string, watchlistId: string, companyId: string): Promise<"created" | "exists" | "missing-list" | "missing-company">;
+  remove(userId: string, watchlistId: string, companyId: string): Promise<boolean>;
+}
+
+export interface SavedSearchRepository {
+  list(userId: string): Promise<SavedSearchItem[]>;
+  create(userId: string, nombre: string, filtros: CompanyFilters): Promise<SavedSearchItem | "limit">;
+  remove(userId: string, id: string): Promise<boolean>;
 }

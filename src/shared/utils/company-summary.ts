@@ -1,6 +1,6 @@
-import type { EstadoMatricula, TamanoEmpresa } from "@/shared/types/domain";
+import type { EstadoMatricula, SectorCodigo, TamanoEmpresa } from "@/shared/types/domain";
 import { isoDate } from "@/shared/utils/dates";
-import { ESTADO_MATRICULA_LABEL, TAMANO_LABEL } from "@/shared/utils/labels";
+import { ESTADO_MATRICULA_LABEL, SECTOR_LABEL, TAMANO_LABEL, formatMoney } from "@/shared/utils/labels";
 
 export interface SummaryInput {
   estadoMatricula: EstadoMatricula | null;
@@ -11,6 +11,9 @@ export interface SummaryInput {
   municipio: string | null;
   tamanoEmpresa: TamanoEmpresa | null;
   numeroEmpleados: number | null;
+  sector?: SectorCodigo | null;
+  ingresosUltimoAnio?: number | null;
+  anioIngresos?: number | null;
 }
 
 export function buildCompanySummary(company: SummaryInput): string {
@@ -38,6 +41,12 @@ export function buildCompanySummary(company: SummaryInput): string {
   }
   if (company.numeroEmpleados !== null) {
     phrases.push(`${company.numeroEmpleados} empleados`);
+  }
+  if (company.sector) {
+    phrases.push(`sector ${SECTOR_LABEL[company.sector]}`);
+  }
+  if (company.ingresosUltimoAnio != null && company.anioIngresos && Number.isFinite(company.ingresosUltimoAnio)) {
+    phrases.push(`ingresos de ${formatMoney(company.ingresosUltimoAnio)} en ${company.anioIngresos}`);
   }
   if (phrases.length === 0) {
     return "No hay datos suficientes para armar el resumen.";

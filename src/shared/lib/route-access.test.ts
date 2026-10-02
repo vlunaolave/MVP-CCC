@@ -14,6 +14,9 @@ describe("acceso por rol", () => {
     expect(isRoleAllowed("/dashboard", "CONSULTOR")).toBe(true);
     expect(isRoleAllowed("/monitoreo", "ANALISTA")).toBe(true);
     expect(isRoleAllowed("/monitoreo", "CONSULTOR")).toBe(false);
+    expect(isRoleAllowed("/listas", "CONSULTOR")).toBe(false);
+    expect(isRoleAllowed("/listas", "ANALISTA")).toBe(true);
+    expect(isRoleAllowed("/sectores", "CONSULTOR")).toBe(true);
     expect(isRoleAllowed("/administracion", "ADMINISTRADOR")).toBe(true);
   });
 });
