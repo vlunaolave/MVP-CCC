@@ -84,16 +84,10 @@ export function HomeScreen() {
   return (
     <div className="grid gap-6">
       <div>
-<<<<<<< HEAD
-        <p className="text-sm text-muted-foreground">{greetingFor(user.nombre)}</p>
-        <form
-          className="mt-3"
-=======
         <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">Centro de inteligencia empresarial</h1>
         <p className="mt-1 text-sm text-muted-foreground">{greetingFor(user.nombre)}. {user.plataformaNombre}</p>
         <form
           className="mt-4"
->>>>>>> cursor/emis-intelligence-profile-f906
           onSubmit={(event) => {
             event.preventDefault();
             const value = q.trim();
