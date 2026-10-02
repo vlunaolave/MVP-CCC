@@ -1,0 +1,324 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum TipoRegistro {
+  MERCANTIL
+  ESAL
+}
+
+enum EstadoMatricula {
+  ACTIVA
+  SUSPENDIDA
+  CANCELADA
+  INACTIVA
+}
+
+enum EstadoJuridico {
+  VIGENTE
+  EN_LIQUIDACION
+  DISUELTA
+  INACTIVA
+}
+
+enum TamanoEmpresa {
+  MICRO
+  PEQUENA
+  MEDIANA
+  GRANDE
+}
+
+enum RolCodigo {
+  ADMINISTRADOR
+  ANALISTA
+  CONSULTOR
+}
+
+enum Severidad {
+  INFORMATIVA
+  ATENCION
+  IMPORTANTE
+}
+
+enum TipoRelacion {
+  REPRESENTANTE_LEGAL
+  SOCIO
+  ESTABLECIMIENTO
+  PERSONA_OTRA_EMPRESA
+  EMPRESA_RELACIONADA
+}
+
+enum TipoEvento {
+  CONSTITUCION
+  MATRICULA
+  RENOVACION
+  CAMBIO_REPRESENTANTE
+  CAMBIO_DOMICILIO
+  MODIFICACION_ACTIVIDAD
+  CAMBIO_ESTADO_MATRICULA
+  CAMBIO_TIPO_ORGANIZACION
+  APERTURA_ESTABLECIMIENTO
+  OTRO_REGISTRAL
+}
+
+enum CondicionRegla {
+  CAMBIO
+  IGUAL_A
+  DISTINTO_DE
+}
+
+enum AccionAuditoria {
+  LOGIN
+  LOGOUT
+  CONSULTA_EMPRESA
+  INICIO_MONITOREO
+  FIN_MONITOREO
+  LECTURA_ALERTA
+  CAMBIO_ADMINISTRATIVO
+}
+
+enum ProveedorAuth {
+  LOCAL
+  OIDC
+  OAUTH2
+  SAML
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  nombre       String
+  passwordHash String
+  rol          RolCodigo
+  activo       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sessions     Session[]
+  identities   AuthIdentity[]
+  monitoreos   MonitoredCompany[]
+  auditoria    AuditLog[]
+}
+
+model AuthIdentity {
+  id        String        @id @default(uuid())
+  userId    String
+  proveedor ProveedorAuth
+  subject   String
+  createdAt DateTime      @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([proveedor, subject])
+}
+
+model Session {
+  id        String        @id @default(uuid())
+  userId    String
+  proveedor ProveedorAuth
+  expiresAt DateTime
+  createdAt DateTime      @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Role {
+  id          String    @id @default(uuid())
+  codigo      RolCodigo @unique
+  nombre      String
+  descripcion String
+
+  permisos RolePermission[]
+}
+
+model Permission {
+  id          String @id @default(uuid())
+  codigo      String @unique
+  descripcion String
+  modulo      String
+
+  roles RolePermission[]
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+
+  role       Role       @relation(fields: [roleId], references: [id])
+  permission Permission @relation(fields: [permissionId], references: [id])
+
+  @@id([roleId, permissionId])
+}
+
+model Company {
+  id                           String          @id @default(uuid())
+  nit                          String          @unique
+  razonSocial                  String
+  nombreComercial              String?
+  tipoOrganizacion             String
+  tipoRegistro                 TipoRegistro
+  estadoMatricula              EstadoMatricula
+  numeroMatricula              String
+  fechaMatricula               DateTime
+  fechaRenovacion              DateTime?
+  camaraComercio               String
+  municipio                    String
+  departamento                 String
+  direccion                    String
+  telefono                     String?
+  email                        String?
+  sitioWeb                     String?
+  actividadEconomicaCodigo     String
+  actividadEconomicaDescripcion String
+  tamanoEmpresa                TamanoEmpresa
+  numeroEmpleados              Int?
+  capital                      Decimal?
+  activos                      Decimal?
+  fechaConstitucion            DateTime?
+  estado                       EstadoJuridico
+  representanteLegal           String?
+  fechaUltimaActualizacion     DateTime
+
+  establecimientos Establishment[]
+  relaciones       CompanyRelation[] @relation("CompanyRelations")
+  relacionadaEn    CompanyRelation[] @relation("RelatedCompany")
+  eventos          TimelineEvent[]
+  alertas          Alert[]
+  monitoreos       MonitoredCompany[]
+
+  @@index([razonSocial])
+  @@index([nombreComercial])
+  @@index([tipoRegistro])
+  @@index([estadoMatricula])
+  @@index([municipio])
+  @@index([actividadEconomicaCodigo])
+  @@index([tamanoEmpresa])
+}
+
+model Person {
+  id              String @id @default(uuid())
+  nombre          String
+  tipoDocumento   String
+  numeroDocumento String
+
+  relaciones CompanyRelation[]
+}
+
+model Establishment {
+  id           String @id @default(uuid())
+  companyId    String
+  nombre       String
+  direccion    String
+  municipio    String
+  departamento String
+  estado       String
+
+  company    Company           @relation(fields: [companyId], references: [id])
+  relaciones CompanyRelation[]
+}
+
+model CompanyRelation {
+  id                      String       @id @default(uuid())
+  companyId               String
+  tipo                    TipoRelacion
+  personId                String?
+  relatedCompanyId        String?
+  establishmentId         String?
+  descripcion             String
+  porcentajeParticipacion Decimal?
+  fechaInicio             DateTime
+  fechaFin                DateTime?
+  vigente                 Boolean
+
+  company        Company        @relation("CompanyRelations", fields: [companyId], references: [id])
+  person         Person?        @relation(fields: [personId], references: [id])
+  relatedCompany Company?       @relation("RelatedCompany", fields: [relatedCompanyId], references: [id])
+  establishment  Establishment? @relation(fields: [establishmentId], references: [id])
+}
+
+model TimelineEvent {
+  id          String     @id @default(uuid())
+  companyId   String
+  tipo        TipoEvento
+  fecha       DateTime
+  titulo      String
+  descripcion String
+  fuente      String
+  metadata    Json?
+
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@index([companyId, fecha])
+}
+
+model AlertRule {
+  id              String         @id @default(uuid())
+  nombre          String
+  descripcion     String
+  tipoEvento      TipoEvento
+  campoObservado  String
+  condicion       CondicionRegla
+  valorReferencia String?
+  severidad       Severidad
+  activa          Boolean
+  esDemostrativa  Boolean
+
+  alertas Alert[]
+}
+
+model Alert {
+  id          String    @id @default(uuid())
+  companyId   String
+  ruleId      String
+  tipo        TipoEvento
+  titulo      String
+  descripcion String
+  severidad   Severidad
+  fecha       DateTime
+  leida       Boolean   @default(false)
+  metadata    Json?
+
+  company Company   @relation(fields: [companyId], references: [id])
+  rule    AlertRule @relation(fields: [ruleId], references: [id])
+
+  @@index([leida, fecha])
+  @@index([companyId, fecha])
+}
+
+model MonitoredCompany {
+  id          String   @id @default(uuid())
+  userId      String
+  companyId   String
+  fechaInicio DateTime
+
+  user    User    @relation(fields: [userId], references: [id])
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@unique([userId, companyId])
+}
+
+model AuditLog {
+  id        String          @id @default(uuid())
+  userId    String
+  accion    AccionAuditoria
+  entidad   String
+  entidadId String?
+  fecha     DateTime
+  metadata  Json?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, accion, fecha])
+}
+
+model AppSetting {
+  id          String @id @default(uuid())
+  clave       String @unique
+  valor       String
+  descripcion String
+}
