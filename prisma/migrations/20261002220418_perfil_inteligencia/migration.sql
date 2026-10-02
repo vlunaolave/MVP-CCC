@@ -107,7 +107,7 @@ CREATE TABLE "new_Company" (
     "sector" TEXT NOT NULL,
     "fuenteDatos" TEXT NOT NULL DEFAULT 'DEMO'
 );
-INSERT INTO "new_Company" ("actividadEconomicaCodigo", "actividadEconomicaDescripcion", "activos", "camaraComercio", "capital", "departamento", "direccion", "email", "estado", "estadoMatricula", "fechaConstitucion", "fechaMatricula", "fechaRenovacion", "fechaUltimaActualizacion", "id", "municipio", "nit", "nombreComercial", "numeroEmpleados", "numeroMatricula", "razonSocial", "representanteLegal", "sitioWeb", "tamanoEmpresa", "telefono", "tipoOrganizacion", "tipoRegistro") SELECT "actividadEconomicaCodigo", "actividadEconomicaDescripcion", "activos", "camaraComercio", "capital", "departamento", "direccion", "email", "estado", "estadoMatricula", "fechaConstitucion", "fechaMatricula", "fechaRenovacion", "fechaUltimaActualizacion", "id", "municipio", "nit", "nombreComercial", "numeroEmpleados", "numeroMatricula", "razonSocial", "representanteLegal", "sitioWeb", "tamanoEmpresa", "telefono", "tipoOrganizacion", "tipoRegistro" FROM "Company";
+INSERT INTO "new_Company" ("actividadEconomicaCodigo", "actividadEconomicaDescripcion", "activos", "camaraComercio", "capital", "departamento", "direccion", "email", "estado", "estadoMatricula", "fechaConstitucion", "fechaMatricula", "fechaRenovacion", "fechaUltimaActualizacion", "fuenteDatos", "id", "municipio", "nit", "nombreComercial", "numeroEmpleados", "numeroMatricula", "razonSocial", "representanteLegal", "sector", "sitioWeb", "tamanoEmpresa", "telefono", "tipoOrganizacion", "tipoRegistro") SELECT "actividadEconomicaCodigo", "actividadEconomicaDescripcion", "activos", "camaraComercio", "capital", "departamento", "direccion", "email", "estado", "estadoMatricula", "fechaConstitucion", "fechaMatricula", "fechaRenovacion", "fechaUltimaActualizacion", 'DEMO', "id", "municipio", "nit", "nombreComercial", "numeroEmpleados", "numeroMatricula", "razonSocial", "representanteLegal", 'SERVICIOS', "sitioWeb", "tamanoEmpresa", "telefono", "tipoOrganizacion", "tipoRegistro" FROM "Company";
 DROP TABLE "Company";
 ALTER TABLE "new_Company" RENAME TO "Company";
 CREATE UNIQUE INDEX "Company_nit_key" ON "Company"("nit");
@@ -132,7 +132,7 @@ CREATE TABLE "new_TimelineEvent" (
     "metadata" JSONB,
     CONSTRAINT "TimelineEvent_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "Company" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
-INSERT INTO "new_TimelineEvent" ("companyId", "descripcion", "fecha", "fuente", "id", "metadata", "tipo", "titulo") SELECT "companyId", "descripcion", "fecha", "fuente", "id", "metadata", "tipo", "titulo" FROM "TimelineEvent";
+INSERT INTO "new_TimelineEvent" ("categoria", "companyId", "descripcion", "fecha", "fuente", "id", "metadata", "tipo", "titulo") SELECT 'REGISTRAL', "companyId", "descripcion", "fecha", "fuente", "id", "metadata", "tipo", "titulo" FROM "TimelineEvent";
 DROP TABLE "TimelineEvent";
 ALTER TABLE "new_TimelineEvent" RENAME TO "TimelineEvent";
 CREATE INDEX "TimelineEvent_companyId_fecha_idx" ON "TimelineEvent"("companyId", "fecha");
