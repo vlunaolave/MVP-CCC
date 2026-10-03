@@ -154,6 +154,18 @@ export interface CompanyProfile extends CompanyListItem {
   alertas: AlertItem[] | null;
 }
 
+export interface VinculoPersona {
+  relacionId: string;
+  companyId: string;
+  razonSocial: string;
+  nit: string;
+  tipo: "REPRESENTANTE_LEGAL" | "SOCIO";
+  porcentajeParticipacion: number | null;
+  vigente: boolean;
+  fechaInicio: string;
+  fechaFin: string | null;
+}
+
 export interface Cobertura {
   registral: "Completa" | "Incompleta";
   financiera: string;
@@ -316,7 +328,13 @@ export interface RelationItem {
   fechaInicio: string;
   fechaFin: string | null;
   vigente: boolean;
-  persona: { id: string; nombre: string; tipoDocumento: string; numeroDocumento: string } | null;
+  persona: {
+    id: string;
+    nombre: string;
+    tipoDocumento: string;
+    numeroDocumento: string;
+    vinculos: VinculoPersona[];
+  } | null;
   empresaRelacionada: { id: string; razonSocial: string; nit: string } | null;
   establecimiento: {
     id: string;
@@ -370,6 +388,7 @@ export interface GraphNode {
     titulo: string;
     subtitulo: string;
     empresaId: string | null;
+    nota?: string;
     campos: { etiqueta: string; valor: string }[];
   };
 }

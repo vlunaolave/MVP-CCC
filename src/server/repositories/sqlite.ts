@@ -1,5 +1,6 @@
 import type { AccionAuditoria, Prisma, PrismaClient, RolCodigo, User } from "@prisma/client";
 
+import { buildCompanyGraph } from "@/server/services/company-graph";
 import type {
   AlertItem,
   CompanyListItem,
@@ -9,8 +10,6 @@ import type {
   DashboardPayload,
   CompanyProfile,
   FinancePayload,
-  GraphNode,
-  GraphNodeType,
   GraphPayload,
   IndicatorSet,
   MonitoringItem,
@@ -25,6 +24,7 @@ import type {
   SortKey,
   TimelineItem,
   UltimoPeriodo,
+  VinculoPersona,
   WatchlistItem,
 } from "@/shared/types/domain";
 import { SECTOR_CODIGOS } from "@/shared/types/domain";
@@ -43,6 +43,7 @@ import {
   SLUG_SECTOR,
   TAMANO_LABEL,
 } from "@/shared/utils/labels";
+import { attachVinculosByPerson } from "@/shared/utils/person-relations";
 import { includesText } from "@/shared/utils/text";
 import {
   difference,
@@ -283,6 +284,7 @@ function toRelations(company: ProfileRecord): RelationItem[] {
           nombre: relation.person.nombre,
           tipoDocumento: relation.person.tipoDocumento,
           numeroDocumento: relation.person.numeroDocumento,
+          vinculos: [],
         }
       : null,
     empresaRelacionada: relation.relatedCompany
@@ -399,9 +401,8 @@ function toAlerts(company: ProfileRecord): AlertItem[] {
   }));
 }
 
-function toProfile(company: ProfileRecord, monitoreada: boolean): CompanyProfile {
+function toProfile(company: ProfileRecord, monitoreada: boolean, relaciones: RelationItem[]): CompanyProfile {
   const base = toListItem(company, monitoreada);
-  const relations = toRelations(company);
   const periods = company.periodos.map(toAmounts);
   const ultimoPeriodo = buildUltimoPeriodo(periods);
   return {
@@ -421,7 +422,7 @@ function toProfile(company: ProfileRecord, monitoreada: boolean): CompanyProfile
     estado: company.estado,
     representanteLegal: company.representanteLegal,
     fuenteDatos: company.fuenteDatos,
-    cobertura: buildCoverage(company, relations),
+    cobertura: buildCoverage(company, relaciones),
     ultimoPeriodo,
     resumen: buildCompanySummary({
       estadoMatricula: company.estadoMatricula,
@@ -437,73 +438,42 @@ function toProfile(company: ProfileRecord, monitoreada: boolean): CompanyProfile
       anioIngresos: ultimoPeriodo?.year ?? null,
     }),
     antiguedad: formatAntiguedad(company.fechaConstitucion?.toISOString() ?? null),
-    relaciones: relations,
+    relaciones,
     timeline: toTimeline(company),
     alertas: toAlerts(company),
   };
 }
 
-function graphKind(relation: RelationItem): GraphNodeType {
-  if (relation.tipo === "REPRESENTANTE_LEGAL") return "representante";
-  if (relation.tipo === "SUPLENTE") return "suplente";
-  if (relation.tipo === "MIEMBRO_JUNTA") return "junta";
-  if (relation.tipo === "REVISOR_FISCAL") return "revisor";
-  if (relation.tipo === "SOCIO") return relation.porcentajeParticipacion !== null ? "accionista" : "socio";
-  if (relation.tipo === "ESTABLECIMIENTO") return "establecimiento";
-  if (relation.tipo === "MATRIZ") return "matriz";
-  if (relation.tipo === "SUBSIDIARIA") return "subsidiaria";
-  if (relation.tipo === "EMPRESA_RELACIONADA") return "relacionada";
-  return "persona";
-}
-
-function relationNode(relation: RelationItem): GraphNode {
-  const tipo = graphKind(relation);
-  const empresaId =
-    relation.empresaRelacionada &&
-    (relation.tipo === "EMPRESA_RELACIONADA" || relation.tipo === "MATRIZ" || relation.tipo === "SUBSIDIARIA")
-      ? relation.empresaRelacionada.id
-      : null;
-  const titulo =
-    relation.persona?.nombre ??
-    relation.empresaRelacionada?.razonSocial ??
-    relation.establecimiento?.nombre ??
-    relation.descripcion;
-  const campos: GraphNode["data"]["campos"] = [
-    { etiqueta: "Tipo", valor: RELACION_LABEL[relation.tipo] },
-    { etiqueta: "Vigencia", valor: relation.vigente ? "Vigente" : "No vigente" },
-    { etiqueta: "Desde", valor: isoDate(relation.fechaInicio) },
-  ];
-  if (relation.fechaFin) {
-    campos.push({ etiqueta: "Hasta", valor: isoDate(relation.fechaFin) });
+async function relationsWithPeople(db: PrismaClient, company: ProfileRecord): Promise<RelationItem[]> {
+  const relations = toRelations(company);
+  const personIds = [...new Set(relations.flatMap((item) => (item.persona ? [item.persona.id] : [])))];
+  if (personIds.length === 0) {
+    return relations;
   }
-  if (relation.cargo) {
-    campos.push({ etiqueta: "Cargo", valor: relation.cargo });
-  }
-  if (relation.porcentajeParticipacion !== null) {
-    campos.push({ etiqueta: "Participación", valor: `${relation.porcentajeParticipacion} %` });
-  }
-  if (relation.persona) {
-    campos.push({
-      etiqueta: "Documento",
-      valor: `${relation.persona.tipoDocumento} ${relation.persona.numeroDocumento}`,
+  const rows = await db.companyRelation.findMany({
+    where: { personId: { in: personIds }, tipo: { in: ["SOCIO", "REPRESENTANTE_LEGAL"] } },
+    include: { company: { select: { id: true, razonSocial: true, nit: true } } },
+  });
+  const rolesByPerson = new Map<string, VinculoPersona[]>();
+  for (const row of rows) {
+    if (!row.personId || (row.tipo !== "SOCIO" && row.tipo !== "REPRESENTANTE_LEGAL")) {
+      continue;
+    }
+    const list = rolesByPerson.get(row.personId) ?? [];
+    list.push({
+      relacionId: row.id,
+      companyId: row.company.id,
+      razonSocial: row.company.razonSocial,
+      nit: row.company.nit,
+      tipo: row.tipo,
+      porcentajeParticipacion: money(row.porcentajeParticipacion),
+      vigente: row.vigente,
+      fechaInicio: row.fechaInicio.toISOString(),
+      fechaFin: row.fechaFin?.toISOString() ?? null,
     });
+    rolesByPerson.set(row.personId, list);
   }
-  if (relation.empresaRelacionada) {
-    campos.push({ etiqueta: "NIT", valor: relation.empresaRelacionada.nit });
-  }
-  if (relation.establecimiento) {
-    campos.push(
-      { etiqueta: "Dirección", valor: relation.establecimiento.direccion },
-      { etiqueta: "Municipio", valor: relation.establecimiento.municipio },
-      { etiqueta: "Estado", valor: relation.establecimiento.estado === "ABIERTO" ? "Abierto" : "Cerrado" },
-    );
-  }
-  campos.push({ etiqueta: "Descripción", valor: relation.descripcion });
-  return {
-    id: `rel-${relation.id}`,
-    type: tipo,
-    data: { titulo, subtitulo: relation.cargo ?? RELACION_LABEL[relation.tipo], empresaId, campos },
-  };
+  return attachVinculosByPerson(relations, rolesByPerson);
 }
 
 function countBy(values: string[]): { label: string; value: number }[] {
@@ -583,7 +553,8 @@ export class SqliteCompanyRepository implements CompanyRepository {
     const monitored = await this.db.monitoredCompany.findUnique({
       where: { userId_companyId: { userId, companyId: id } },
     });
-    return toProfile(company, Boolean(monitored));
+    const relaciones = await relationsWithPeople(this.db, company);
+    return toProfile(company, Boolean(monitored), relaciones);
   }
 
   async graph(id: string): Promise<GraphPayload | null> {
@@ -591,10 +562,10 @@ export class SqliteCompanyRepository implements CompanyRepository {
     if (!company) {
       return null;
     }
-    const profile = toProfile(company, false);
-    const relations = profile.relaciones ?? [];
-    const nodes: GraphNode[] = [
-      {
+    const relations = await relationsWithPeople(this.db, company);
+    return buildCompanyGraph({
+      companyId: company.id,
+      company: {
         id: `empresa-${company.id}`,
         type: "empresa",
         data: {
@@ -610,17 +581,8 @@ export class SqliteCompanyRepository implements CompanyRepository {
           ],
         },
       },
-      ...relations.map(relationNode),
-    ];
-    return {
-      nodes,
-      edges: relations.map((relation) => ({
-        id: `edge-${relation.id}`,
-        source: `empresa-${company.id}`,
-        target: `rel-${relation.id}`,
-        label: relation.vigente ? RELACION_LABEL[relation.tipo] : `${RELACION_LABEL[relation.tipo]} · histórica`,
-      })),
-    };
+      relations,
+    });
   }
 
   async finances(id: string): Promise<FinancePayload | null> {
