@@ -94,10 +94,8 @@ export function AppShell({ user, children }: { user: SessionUser; children: Reac
 
 function Brand() {
   return (
-    <div className="px-4 pt-5 pb-3">
-      <div className="rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-slate-200/80">
-        <CamaraLogo className="mx-auto w-36" />
-      </div>
+    <div className="px-5 pt-5 pb-3">
+      <CamaraLogo className="w-full" />
       <p className="mt-3 text-center text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">Inteligencia empresarial</p>
     </div>
   );
