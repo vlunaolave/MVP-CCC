@@ -28,9 +28,10 @@ const shapeClass: Record<GraphNode["type"], string> = {
 function GraphCard({ data, type }: { data: GraphNode["data"]; type?: string }) {
   const kind = (type ?? "persona") as GraphNode["type"];
   return (
-    <div className={cn("px-3 py-2 text-center shadow-sm", shapeClass[kind])}>
+    <div className={cn("max-w-56 px-3 py-2 text-center text-balance shadow-sm", shapeClass[kind])}>
       <p className="text-[10px] tracking-wide uppercase opacity-80">{data.subtitulo}</p>
       <p className="text-sm font-semibold">{data.titulo}</p>
+      {data.nota ? <p className="mt-1 text-[10px] leading-snug font-medium">{data.nota}</p> : null}
     </div>
   );
 }

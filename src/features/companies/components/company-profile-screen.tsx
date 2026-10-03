@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,9 +14,10 @@ import { apiClient } from "@/shared/lib/api-client";
 import { useUiStore } from "@/shared/lib/ui-store";
 import { EmptyState, ErrorState, LoadingBlock } from "@/shared/components/screen-states";
 import { EnrollmentBadge, SeverityBadge } from "@/shared/components/status-badge";
-import type { CompanyProfile, GraphPayload } from "@/shared/types/domain";
+import type { CompanyProfile, GraphPayload, RelationItem } from "@/shared/types/domain";
 import { formatDisplayDate } from "@/shared/utils/dates";
 import { ESTADO_JURIDICO_LABEL, ESTADO_MATRICULA_LABEL, REGISTRO_LABEL, RELACION_LABEL, TAMANO_LABEL, formatMoney } from "@/shared/utils/labels";
+import { groupRelationsByPerson, personScopeLabel, vinculoLabel, vinculosEnOtrasEmpresas } from "@/shared/utils/person-relations";
 
 export function CompanyProfileScreen({ companyId }: { companyId: string }) {
   const user = useUiStore((state) => state.user);
@@ -122,23 +124,7 @@ export function CompanyProfileScreen({ companyId }: { companyId: string }) {
         {company.relaciones ? (
           <TabsContent value="relaciones" className="grid gap-4">
             {company.relaciones.length === 0 ? <EmptyState title="Esta empresa no tiene relaciones registradas." /> : null}
-            <ul className="grid gap-3">
-              {company.relaciones.map((relation) => (
-                <li key={relation.id} className="rounded-xl border bg-card p-4 shadow-sm">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="font-medium">{RELACION_LABEL[relation.tipo]}</p>
-                    <span className="text-xs text-muted-foreground">{relation.vigente ? "Vigente" : "No vigente"}</span>
-                  </div>
-                  <p className="mt-1 text-sm">{relation.descripcion}</p>
-                  {relation.porcentajeParticipacion !== null ? <p className="text-sm text-muted-foreground">{relation.porcentajeParticipacion} % de participación</p> : null}
-                  {relation.empresaRelacionada ? (
-                    <Button asChild variant="link" className="h-auto px-0">
-                      <Link href={`/empresas/${relation.empresaRelacionada.id}`}>{relation.empresaRelacionada.razonSocial}</Link>
-                    </Button>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
+            <RelationList companyId={company.id} relations={company.relaciones} />
             {graph.isLoading ? <LoadingBlock rows={2} /> : null}
             {graph.isError ? <ErrorState onRetry={() => void graph.refetch()} /> : null}
             {graph.data ? <CompanyGraph graph={graph.data} /> : null}
@@ -166,6 +152,80 @@ export function CompanyProfileScreen({ companyId }: { companyId: string }) {
         ) : null}
       </Tabs>
     </div>
+  );
+}
+
+function RelationList({ companyId, relations }: { companyId: string; relations: RelationItem[] }) {
+  const grouped = groupRelationsByPerson(relations);
+  return (
+    <ul className="grid gap-3">
+      {grouped.personas.map((group) => {
+        const alcance = personScopeLabel(group.persona.vinculos);
+        const otras = vinculosEnOtrasEmpresas(group.persona.vinculos, companyId);
+        return (
+          <li key={group.persona.id} className="rounded-xl border bg-card p-4 shadow-sm">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div>
+                <p className="font-medium">{group.persona.nombre}</p>
+                <p className="text-xs text-muted-foreground">
+                  {group.persona.tipoDocumento} {group.persona.numeroDocumento}
+                </p>
+              </div>
+              {alcance ? <Badge variant="secondary">{alcance}</Badge> : null}
+            </div>
+            <div className="mt-3">
+              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">En esta empresa</p>
+              <ul className="mt-2 grid gap-2">
+                {group.relaciones.map((relation) => (
+                  <li key={relation.id} className="rounded-lg bg-muted/60 px-3 py-2 text-sm">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="font-medium">{RELACION_LABEL[relation.tipo]}</span>
+                      <span className="text-xs text-muted-foreground">{relation.vigente ? "Vigente" : "No vigente"}</span>
+                    </div>
+                    {relation.porcentajeParticipacion !== null ? (
+                      <p className="text-muted-foreground">{relation.porcentajeParticipacion} % de participación</p>
+                    ) : null}
+                    <p className="text-muted-foreground">{relation.descripcion}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            {otras.length > 0 ? (
+              <div className="mt-3">
+                <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">En otras empresas</p>
+                <ul className="mt-2 grid gap-2">
+                  {otras.map((vinculo) => (
+                    <li key={vinculo.relacionId} className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+                      <span>{vinculoLabel(vinculo)}</span>
+                      <Button asChild variant="link" className="h-auto px-0">
+                        <Link href={`/empresas/${vinculo.companyId}`}>{vinculo.razonSocial}</Link>
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </li>
+        );
+      })}
+      {grouped.otras.map((relation) => (
+        <li key={relation.id} className="rounded-xl border bg-card p-4 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="font-medium">
+              {relation.empresaRelacionada?.razonSocial ?? relation.establecimiento?.nombre ?? RELACION_LABEL[relation.tipo]}
+            </p>
+            <span className="text-xs text-muted-foreground">{relation.vigente ? "Vigente" : "No vigente"}</span>
+          </div>
+          <p className="mt-1 text-xs tracking-wide text-muted-foreground uppercase">{RELACION_LABEL[relation.tipo]}</p>
+          <p className="mt-1 text-sm">{relation.descripcion}</p>
+          {relation.empresaRelacionada ? (
+            <Button asChild variant="link" className="h-auto px-0">
+              <Link href={`/empresas/${relation.empresaRelacionada.id}`}>{relation.empresaRelacionada.razonSocial}</Link>
+            </Button>
+          ) : null}
+        </li>
+      ))}
+    </ul>
   );
 }
 
