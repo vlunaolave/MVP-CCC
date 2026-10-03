@@ -410,6 +410,28 @@ export interface SeriesPoint {
   value: number;
 }
 
+export interface MonthStat {
+  etiqueta: string;
+  ultimo: number;
+  delta: number;
+}
+
+export interface EmpresaAtencion {
+  companyId: string;
+  razonSocial: string;
+  nit: string;
+  alertas: number;
+  ultimoCambio: string;
+  fecha: string;
+}
+
+export interface MonitoreoReciente {
+  companyId: string;
+  razonSocial: string;
+  municipio: string;
+  fechaInicio: string;
+}
+
 export interface DashboardPayload {
   kpis: {
     disponibles: number;
@@ -420,17 +442,27 @@ export interface DashboardPayload {
     esal: number;
     ingresosAgregados: number;
     crecimientoPromedio: number | null;
+    sectoresAnalizados: number;
+    cambiosRecientes: number;
+  };
+  contexto: {
+    alertas: MonthStat;
+    monitoreo: MonthStat;
+    consultas: MonthStat;
   };
   empresasPorTipo: SeriesPoint[];
   empresasPorEstado: SeriesPoint[];
   empresasPorActividad: SeriesPoint[];
   empresasPorSector: SeriesPoint[];
   empresasPorDepartamento: SeriesPoint[];
+  empresasPorMunicipio: SeriesPoint[];
   empresasPorTamano: SeriesPoint[];
   alertasPorTipo: SeriesPoint[];
   alertasPorCategoria: SeriesPoint[];
   alertasEnElTiempo: SeriesPoint[];
   monitoreadasPorMunicipio: SeriesPoint[];
+  atencion: EmpresaAtencion[];
+  monitoreoReciente: MonitoreoReciente[];
   opciones: { municipios: string[]; departamentos: string[]; sectores: SectorCodigo[]; tamanos: TamanoEmpresa[] };
 }
 
