@@ -16,4 +16,4 @@ Copy `.env.example` to `.env` before Prisma commands. For an unattended database
 
 Demo accounts and the INNOVA VALLE walkthrough are in `README.md`.
 
-The application is on `mvp-inteligencia-empresarial`. `main` is an empty initial commit, so dependency install finds no `package.json` there.
+On boot, copy `.env` when it is missing, run `npx prisma migrate deploy`, and run `npx prisma db seed` only when `prisma/dev.db` does not exist. Then start `npm run dev`. `npm run build` currently fails typecheck in `src/server/services/company-graph.ts` and `company-graph.test.ts`; `npm test` is the passing automated check.
