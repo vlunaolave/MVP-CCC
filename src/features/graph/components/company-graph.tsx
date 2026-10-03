@@ -51,20 +51,39 @@ const nodeTypes: NodeTypes = {
 
 export function CompanyGraph({ graph }: { graph: GraphPayload }) {
   const [selectedId, setSelectedId] = useState<string | null>(graph.nodes[0]?.id ?? null);
-  const nodes = useMemo<FlowNode[]>(
-    () =>
-      graph.nodes.map((node, index) => {
-        const angle = ((index - 1) / Math.max(graph.nodes.length - 1, 1)) * Math.PI * 2;
-        const position = index === 0 ? { x: 280, y: 180 } : { x: 280 + Math.cos(angle) * 260, y: 180 + Math.sin(angle) * 170 };
-        return { id: node.id, type: node.type, data: node.data, position };
-      }),
-    [graph.nodes],
-  );
+  const nodes = useMemo<FlowNode[]>(() => {
+    const center = graph.nodes.find((node) => node.type === "empresa") ?? graph.nodes[0];
+    const people = graph.nodes.filter((node) => node.type === "socio" || node.type === "representante" || node.type === "persona");
+    const others = graph.nodes.filter((node) => node !== center && !people.includes(node));
+    const place = (list: GraphNode[], radiusX: number, radiusY: number) =>
+      list.map((node, index) => {
+        const angle = -Math.PI / 2 + (index / Math.max(list.length, 1)) * Math.PI * 2;
+        return {
+          id: node.id,
+          type: node.type,
+          data: node.data,
+          position: { x: 520 + Math.cos(angle) * radiusX, y: 340 + Math.sin(angle) * radiusY },
+        };
+      });
+    if (!center) {
+      return [];
+    }
+    return [
+      { id: center.id, type: center.type, data: center.data, position: { x: 520, y: 340 } },
+      ...place(people, 340, 230),
+      ...place(others, 620, 400),
+    ];
+  }, [graph.nodes]);
   const edges = graph.edges.map((edge) => ({
     id: edge.id,
     source: edge.source,
     target: edge.target,
     label: edge.label,
+    labelStyle: { fontSize: 11, fontWeight: 600, fill: "#1e293b" },
+    labelBgPadding: [4, 2] as [number, number],
+    labelBgBorderRadius: 4,
+    labelBgStyle: { fill: "#ffffff", fillOpacity: 0.94 },
+    style: { stroke: "#64748b", strokeWidth: 1.4 },
   }));
   const selected = graph.nodes.find((node) => node.id === selectedId) ?? null;
 

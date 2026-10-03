@@ -212,17 +212,18 @@ function RelationList({ companyId, relations }: { companyId: string; relations: 
         <li key={relation.id} className="rounded-xl border bg-card p-4 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="font-medium">
-              {relation.empresaRelacionada?.razonSocial ?? relation.establecimiento?.nombre ?? RELACION_LABEL[relation.tipo]}
+              {relation.empresaRelacionada ? (
+                <Link className="text-primary underline-offset-4 hover:underline" href={`/empresas/${relation.empresaRelacionada.id}`}>
+                  {relation.empresaRelacionada.razonSocial}
+                </Link>
+              ) : (
+                (relation.establecimiento?.nombre ?? RELACION_LABEL[relation.tipo])
+              )}
             </p>
             <span className="text-xs text-muted-foreground">{relation.vigente ? "Vigente" : "No vigente"}</span>
           </div>
           <p className="mt-1 text-xs tracking-wide text-muted-foreground uppercase">{RELACION_LABEL[relation.tipo]}</p>
           <p className="mt-1 text-sm">{relation.descripcion}</p>
-          {relation.empresaRelacionada ? (
-            <Button asChild variant="link" className="h-auto px-0">
-              <Link href={`/empresas/${relation.empresaRelacionada.id}`}>{relation.empresaRelacionada.razonSocial}</Link>
-            </Button>
-          ) : null}
         </li>
       ))}
     </ul>
