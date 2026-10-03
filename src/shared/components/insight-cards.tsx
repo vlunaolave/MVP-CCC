@@ -161,18 +161,16 @@ export function InsightChart({
         {rows.length === 0 ? (
           <EmptyState title="No hay datos para los filtros seleccionados." />
         ) : kind === "donut" ? (
-          <div className="grid items-center gap-4 sm:grid-cols-[180px_1fr]">
-            <div className="relative mx-auto h-44 w-44">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={rows} dataKey="value" nameKey="label" innerRadius={52} outerRadius={74} paddingAngle={3} stroke="none" isAnimationActive={!reduce}>
-                    {rows.map((point, index) => (
-                      <Cell key={point.label} fill={PALETTE[index % PALETTE.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
+          <div className="grid items-center gap-4 sm:grid-cols-[200px_1fr]">
+            <div className="mx-auto h-[200px] w-[200px]">
+              <PieChart width={200} height={200}>
+                <Pie data={rows} dataKey="value" nameKey="label" cx="50%" cy="50%" innerRadius={58} outerRadius={84} paddingAngle={2} stroke="none" isAnimationActive={!reduce}>
+                  {rows.map((point, index) => (
+                    <Cell key={point.label} fill={PALETTE[index % PALETTE.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
             </div>
             <ul className="grid gap-2">
               {rows.map((point, index) => (
@@ -207,7 +205,14 @@ export function InsightChart({
                     </>
                   ) : (
                     <>
-                      <XAxis dataKey="axis" tick={{ fontSize: 11, fill: "oklch(0.45 0.03 260)" }} interval={0} angle={-18} height={64} textAnchor="end" />
+                      <XAxis
+                        dataKey="axis"
+                        tick={{ fontSize: 11, fill: "oklch(0.45 0.03 260)" }}
+                        interval={0}
+                        angle={rows.length > 5 ? -18 : 0}
+                        height={rows.length > 5 ? 64 : 32}
+                        textAnchor={rows.length > 5 ? "end" : "middle"}
+                      />
                       <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: "oklch(0.45 0.03 260)" }} width={32} />
                     </>
                   )}

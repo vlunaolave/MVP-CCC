@@ -19,7 +19,7 @@ export function IntelectoLogo({ className }: { className?: string }) {
       alt="Intelecto"
       width={1400}
       height={542}
-      className={cn("h-auto max-w-full object-contain", className)}
+      className={cn("h-14 w-auto max-w-full object-contain", className)}
     />
   );
 }
@@ -28,8 +28,8 @@ export function DevelopedBy({ className, label = "Desarrollado por" }: { classNa
   return (
     <div className={className}>
       <p className="text-[10px] font-semibold tracking-[0.18em] text-muted-foreground uppercase">{label}</p>
-      <div className="mt-2 inline-flex max-w-full rounded-md bg-black px-2 py-1.5">
-        <IntelectoLogo className="h-7 w-auto" />
+      <div className="mt-2 inline-flex max-w-full rounded-lg bg-black px-2.5 py-1.5">
+        <IntelectoLogo className="h-16 w-auto" />
       </div>
     </div>
   );

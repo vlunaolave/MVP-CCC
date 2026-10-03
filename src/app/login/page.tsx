@@ -30,7 +30,7 @@ export default function LoginPage() {
         <footer className="mx-auto mt-8 flex flex-wrap items-center justify-center gap-3 text-sm text-muted-foreground">
           <span>Desarrollado por Intelecto</span>
           <span className="inline-flex rounded-md bg-black px-2 py-1">
-            <IntelectoLogo className="h-6 w-auto" />
+            <IntelectoLogo className="h-16 w-auto" />
           </span>
         </footer>
       </section>

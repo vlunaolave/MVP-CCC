@@ -50,6 +50,15 @@ const NAV: { href: string; label: string; icon: typeof Building2; permission: Pe
   { href: "/administracion", label: "Administración", icon: Settings, permission: "admin.usuarios" },
 ];
 
+function initials(nombre: string) {
+  return nombre
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
 function isActive(pathname: string, href: string) {
   if (href === "/") {
     return pathname === "/";
@@ -69,7 +78,7 @@ export function AppShell({ user, children }: { user: SessionUser; children: Reac
         <aside className="sticky top-0 hidden h-screen w-72 shrink-0 flex-col border-r border-sidebar-border bg-sidebar md:flex">
           <Brand />
           <Nav />
-          <DevelopedBy className="border-t px-5 py-4" />
+          <DevelopedBy className="border-t px-5 pt-4 pb-20" />
         </aside>
         <div className="flex min-w-0 flex-1 flex-col">
           <Header user={user} />
@@ -170,7 +179,7 @@ function Header({ user }: { user: SessionUser }) {
           <div className="flex h-full flex-col">
             <Brand />
             <Nav onNavigate={() => setOpen(false)} />
-            <DevelopedBy className="border-t px-5 py-4" />
+            <DevelopedBy className="border-t px-5 pt-4 pb-20" />
           </div>
         </SheetContent>
       </Sheet>
@@ -206,8 +215,9 @@ function Header({ user }: { user: SessionUser }) {
       ) : null}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button type="button" variant="outline" className="h-11 max-w-48 rounded-xl" data-testid="user-menu">
-            <span className="truncate">{user.nombre}</span>
+          <Button type="button" variant="outline" className="h-11 max-w-12 rounded-xl px-2 sm:max-w-48 sm:px-2.5" data-testid="user-menu" aria-label={user.nombre}>
+            <span className="sm:hidden" aria-hidden="true">{initials(user.nombre)}</span>
+            <span className="hidden truncate sm:inline">{user.nombre}</span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">

@@ -85,7 +85,7 @@ export function FilterBar({
         ) : (
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>{trigger}</SheetTrigger>
-            <SheetContent side="right" className="w-full gap-0 p-0 sm:max-w-md">
+            <SheetContent side="right" className="w-full gap-0 bg-white p-0 shadow-2xl sm:max-w-md">
               <SheetHeader className="border-b pr-12">
                 <SheetTitle>Filtros</SheetTitle>
                 <SheetDescription>
