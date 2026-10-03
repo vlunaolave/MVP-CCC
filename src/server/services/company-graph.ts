@@ -28,6 +28,18 @@ function personNodeType(relations: RelationItem[]): GraphNode["type"] {
   if (relations.some((relation) => relation.tipo === "REPRESENTANTE_LEGAL")) {
     return "representante";
   }
+  if (relations.some((relation) => relation.tipo === "SUPLENTE")) {
+    return "suplente";
+  }
+  if (relations.some((relation) => relation.tipo === "MIEMBRO_JUNTA")) {
+    return "junta";
+  }
+  if (relations.some((relation) => relation.tipo === "REVISOR_FISCAL")) {
+    return "revisor";
+  }
+  if (relations.some((relation) => relation.tipo === "SOCIO" && relation.porcentajeParticipacion !== null)) {
+    return "accionista";
+  }
   if (relations.some((relation) => relation.tipo === "SOCIO")) {
     return "socio";
   }
@@ -52,32 +64,43 @@ function relationNode(relation: RelationItem): GraphNode {
     );
   }
   campos.push({ etiqueta: "Descripción", valor: relation.descripcion });
+  const type =
+    relation.tipo === "MATRIZ"
+      ? "matriz"
+      : relation.tipo === "SUBSIDIARIA"
+        ? "subsidiaria"
+        : relation.tipo === "ESTABLECIMIENTO"
+          ? "establecimiento"
+          : "persona";
   return {
     id: `rel-${relation.id}`,
-    type: "establecimiento",
-    data: { titulo, subtitulo: RELACION_LABEL[relation.tipo], campos },
+    type,
+    data: { titulo, subtitulo: RELACION_LABEL[relation.tipo], empresaId: relation.empresaRelacionada?.id ?? null, campos },
   };
 }
 
 function ensureCompanyNode(
   nodes: Map<string, GraphNode>,
   company: { id: string; razonSocial: string; nit: string },
+  type: GraphNode["type"],
   subtitulo: string,
 ): string {
   const id = `vinculo-empresa-${company.id}`;
   const existing = nodes.get(id);
   if (existing) {
-    if (subtitulo === "Empresa relacionada") {
+    if (existing.type === "relacionada" && type !== "relacionada") {
+      existing.type = type;
       existing.data.subtitulo = subtitulo;
     }
     return id;
   }
   nodes.set(id, {
     id,
-    type: "relacionada",
+    type,
     data: {
       titulo: company.razonSocial,
       subtitulo,
+      empresaId: company.id,
       campos: [{ etiqueta: "NIT", valor: company.nit }],
     },
   });
@@ -127,8 +150,16 @@ export function buildCompanyGraph(input: {
       people.set(relation.persona.id, list);
       continue;
     }
-    if (relation.tipo === "EMPRESA_RELACIONADA" && relation.empresaRelacionada) {
-      const target = ensureCompanyNode(external, relation.empresaRelacionada, "Empresa relacionada");
+    if (
+      (relation.tipo === "EMPRESA_RELACIONADA" || relation.tipo === "MATRIZ" || relation.tipo === "SUBSIDIARIA") &&
+      relation.empresaRelacionada
+    ) {
+      const target = ensureCompanyNode(
+        external,
+        relation.empresaRelacionada,
+        relation.tipo === "MATRIZ" ? "matriz" : relation.tipo === "SUBSIDIARIA" ? "subsidiaria" : "relacionada",
+        RELACION_LABEL[relation.tipo],
+      );
       const node = external.get(target);
       if (node) {
         node.data.campos.push(
@@ -168,6 +199,7 @@ export function buildCompanyGraph(input: {
         titulo: persona.nombre,
         subtitulo: local.map(localRoleLabel).join(" · "),
         nota: alcance ?? undefined,
+        empresaId: null,
         campos: personCampos(persona, input.companyId, local),
       },
     });
@@ -194,6 +226,7 @@ export function buildCompanyGraph(input: {
       const target = ensureCompanyNode(
         external,
         { id: companyId, razonSocial: sample.razonSocial, nit: sample.nit },
+        "relacionada",
         "Empresa vinculada",
       );
       edges.push({

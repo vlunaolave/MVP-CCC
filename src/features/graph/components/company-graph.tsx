@@ -68,7 +68,15 @@ export function CompanyGraph({ graph }: { graph: GraphPayload }) {
   const [selectedId, setSelectedId] = useState<string | null>(graph.nodes[0]?.id ?? null);
   const nodes = useMemo<FlowNode[]>(() => {
     const center = graph.nodes.find((node) => node.type === "empresa") ?? graph.nodes[0];
-    const people = graph.nodes.filter((node) => node.type === "socio" || node.type === "representante" || node.type === "persona");
+    const people = graph.nodes.filter((node) =>
+      node.type === "socio" ||
+      node.type === "representante" ||
+      node.type === "persona" ||
+      node.type === "suplente" ||
+      node.type === "junta" ||
+      node.type === "revisor" ||
+      node.type === "accionista",
+    );
     const others = graph.nodes.filter((node) => node !== center && !people.includes(node));
     const place = (list: GraphNode[], radiusX: number, radiusY: number) =>
       list.map((node, index) => {

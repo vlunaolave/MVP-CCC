@@ -48,6 +48,7 @@ function relationItem(id: string): RelationItem {
     id: relation.id,
     tipo: relation.tipo,
     descripcion: relation.descripcion,
+    cargo: null,
     porcentajeParticipacion: relation.porcentajeParticipacion ?? null,
     fechaInicio: relation.fechaInicio,
     fechaFin: relation.fechaFin ?? null,
@@ -80,7 +81,7 @@ function innovaGraph() {
   const company: GraphNode = {
     id: "empresa-co-innova",
     type: "empresa",
-    data: { titulo: "INNOVA VALLE S.A.S.", subtitulo: "Empresa", campos: [] },
+    data: { titulo: "INNOVA VALLE S.A.S.", subtitulo: "Empresa", empresaId: null, campos: [] },
   };
   return buildCompanyGraph({ companyId: "co-innova", company, relations: withRoles });
 }

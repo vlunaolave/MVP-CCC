@@ -30,7 +30,7 @@ import type {
 import { SECTOR_CODIGOS } from "@/shared/types/domain";
 import type { AlertFilters, CompanyFilters, DashboardFilters, MonitoringFilters } from "@/shared/types/filters";
 import { buildCompanySummary } from "@/shared/utils/company-summary";
-import { dateOnly, formatAntiguedad, inDateRange, isoDate, monthKey } from "@/shared/utils/dates";
+import { dateOnly, formatAntiguedad, inDateRange, monthKey } from "@/shared/utils/dates";
 import { DIRECTIVE_TYPES, LINK_TYPES, categoriaDeEvento } from "@/shared/utils/event-category";
 import {
   CATEGORIA_LABEL,
@@ -38,7 +38,6 @@ import {
   EVENTO_LABEL,
   LISTA_LABEL,
   REGISTRO_LABEL,
-  RELACION_LABEL,
   SECTOR_LABEL,
   SLUG_SECTOR,
   TAMANO_LABEL,
