@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 
+import { decodeSessionToken, encodeSessionToken } from "@/server/auth/session-token";
 import { ROLE_COOKIE, SESSION_COOKIE, SESSION_TTL_MS, sessionCookieOptions } from "@/shared/lib/cookies";
 import { hasPermission, permissionsForRole } from "@/shared/lib/permissions";
 import { prisma } from "@/shared/lib/prisma";
@@ -16,7 +17,7 @@ export async function createSession(userId: string) {
   });
   const jar = await cookies();
   const options = sessionCookieOptions(expiresAt);
-  jar.set(SESSION_COOKIE, session.id, options);
+  jar.set(SESSION_COOKIE, encodeSessionToken(userId, expiresAt.getTime()), options);
   jar.set(ROLE_COOKIE, user.rol, options);
   return session;
 }
@@ -40,24 +41,22 @@ async function loadSettings() {
 
 export async function getCurrentSession(): Promise<SessionUser | null> {
   const jar = await cookies();
-  const sessionId = jar.get(SESSION_COOKIE)?.value;
-  if (!sessionId) {
+  const token = jar.get(SESSION_COOKIE)?.value;
+  const payload = token ? decodeSessionToken(token) : null;
+  if (!payload) {
     return null;
   }
-  const session = await prisma.session.findUnique({
-    where: { id: sessionId },
-    include: { user: true },
-  });
-  if (!session || session.expiresAt.getTime() < Date.now() || !session.user.activo) {
+  const user = await prisma.user.findUnique({ where: { id: payload.sub } });
+  if (!user?.activo) {
     return null;
   }
   const settings = await loadSettings();
   return {
-    id: session.user.id,
-    email: session.user.email,
-    nombre: session.user.nombre,
-    rol: session.user.rol,
-    permisos: permissionsForRole(session.user.rol),
+    id: user.id,
+    email: user.email,
+    nombre: user.nombre,
+    rol: user.rol,
+    permisos: permissionsForRole(user.rol),
     aviso: settings.aviso,
     plataformaNombre: settings.plataformaNombre,
   };
