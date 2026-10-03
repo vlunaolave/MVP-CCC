@@ -28,6 +28,24 @@ export function monthKey(value: string | Date): string {
   return isoDate(value).slice(0, 7);
 }
 
+export function latestMonthStats(values: Array<string | Date>): { etiqueta: string; ultimo: number; delta: number } {
+  if (values.length === 0) {
+    return { etiqueta: "", ultimo: 0, delta: 0 };
+  }
+  const keys = values.map((value) => monthKey(value));
+  const latest = keys.reduce((max, key) => (key > max ? key : max));
+  const [yearText, monthText] = latest.split("-");
+  const previousDate = new Date(Date.UTC(Number(yearText), Number(monthText) - 2, 1));
+  const previous = `${previousDate.getUTCFullYear()}-${String(previousDate.getUTCMonth() + 1).padStart(2, "0")}`;
+  const ultimo = keys.filter((key) => key === latest).length;
+  const anterior = keys.filter((key) => key === previous).length;
+  return {
+    etiqueta: format(dateOnly(`${latest}-01`), "MMM yyyy", { locale: es }),
+    ultimo,
+    delta: ultimo - anterior,
+  };
+}
+
 export function formatAntiguedad(value: string | null, now = new Date()): string | null {
   if (!value) {
     return null;

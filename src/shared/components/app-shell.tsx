@@ -10,9 +10,9 @@ import {
   ListChecks,
   LogOut,
   Menu,
+  PieChart,
   Search,
   Settings,
-  Shield,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -33,19 +33,20 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { useComparisonStore } from "@/features/comparison";
 import { apiClient } from "@/shared/lib/api-client";
 import { useUiStore } from "@/shared/lib/ui-store";
+import { CamaraLogo, DevelopedBy } from "@/shared/components/brand-logos";
 import type { PermissionCode, SessionUser } from "@/shared/types/domain";
 import { ROL_LABEL } from "@/shared/utils/labels";
 import { cn } from "cn";
 
 const NAV: { href: string; label: string; icon: typeof Building2; permission: PermissionCode }[] = [
-  { href: "/", label: "Inicio", icon: Shield, permission: "inicio.ver" },
+  { href: "/", label: "Inicio", icon: LayoutDashboard, permission: "inicio.ver" },
   { href: "/empresas", label: "Empresas", icon: Building2, permission: "empresas.consultar" },
   { href: "/sectores", label: "Sectores", icon: Layers, permission: "sectores.ver" },
   { href: "/comparador", label: "Comparador", icon: GitCompare, permission: "empresas.consultar" },
   { href: "/monitoreo", label: "Monitoreo", icon: Eye, permission: "monitoreo.ver" },
   { href: "/listas", label: "Listas", icon: ListChecks, permission: "listas.ver" },
   { href: "/alertas", label: "Alertas", icon: Bell, permission: "alertas.ver" },
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, permission: "dashboard.ver" },
+  { href: "/dashboard", label: "Dashboard", icon: PieChart, permission: "dashboard.ver" },
   { href: "/administracion", label: "Administración", icon: Settings, permission: "admin.usuarios" },
 ];
 
@@ -65,14 +66,15 @@ export function AppShell({ user, children }: { user: SessionUser; children: Reac
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="flex min-h-screen">
-        <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r bg-sidebar md:flex">
+        <aside className="sticky top-0 hidden h-screen w-72 shrink-0 flex-col border-r border-sidebar-border bg-sidebar md:flex">
           <Brand />
           <Nav />
+          <DevelopedBy className="border-t px-5 py-4" />
         </aside>
         <div className="flex min-w-0 flex-1 flex-col">
           <Header user={user} />
-          <div className="border-b bg-amber-50 px-4 py-2 text-sm text-amber-950 md:px-6">{user.aviso}</div>
-          <main id="contenido" className="flex-1 px-4 py-6 md:px-8">
+          <div className="border-b border-amber-200/80 bg-amber-50 px-4 py-2 text-xs leading-5 text-amber-950 md:px-6">{user.aviso}</div>
+          <main id="contenido" className="flex-1 bg-[radial-gradient(ellipse_at_top,oklch(0.94_0.03_250),transparent_42%)] px-4 py-6 md:px-8">
             {children}
           </main>
         </div>
@@ -83,9 +85,11 @@ export function AppShell({ user, children }: { user: SessionUser; children: Reac
 
 function Brand() {
   return (
-    <div className="border-b px-5 py-5">
-      <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Cámara de Comercio de Cali</p>
-      <p className="mt-1 text-sm font-semibold text-foreground">Inteligencia empresarial</p>
+    <div className="px-4 pt-5 pb-3">
+      <div className="rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-slate-200/80">
+        <CamaraLogo className="mx-auto w-36" />
+      </div>
+      <p className="mt-3 text-center text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">Inteligencia empresarial</p>
     </div>
   );
 }
@@ -96,7 +100,7 @@ function Nav({ onNavigate }: { onNavigate?: () => void }) {
   const compared = useComparisonStore((state) => state.ids.length);
   const items = NAV.filter((item) => user?.permisos.includes(item.permission));
   return (
-    <nav className="flex flex-1 flex-col gap-1 p-3" aria-label="Principal">
+    <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 pb-4" aria-label="Principal">
       {items.map((item) => {
         const Icon = item.icon;
         const active = isActive(pathname, item.href);
@@ -107,14 +111,16 @@ function Nav({ onNavigate }: { onNavigate?: () => void }) {
             onClick={onNavigate}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent",
-              active && "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary",
+              "flex items-center gap-3 rounded-xl px-2 py-1.5 text-sm font-medium text-sidebar-foreground/80 transition hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:outline-2 focus-visible:outline-offset-2",
+              active && "bg-primary text-primary-foreground shadow-sm hover:bg-primary hover:text-primary-foreground",
             )}
           >
-            <Icon className="size-4" aria-hidden="true" />
+            <span className={cn("grid size-8 place-items-center rounded-lg bg-primary/10 text-primary", active && "bg-white/15 text-white")}>
+              <Icon className="size-4" aria-hidden="true" />
+            </span>
             <span className="flex-1">{item.label}</span>
             {item.href === "/comparador" && compared > 0 ? (
-              <span className="rounded-full bg-primary/15 px-1.5 text-xs">{compared}</span>
+              <span className={cn("rounded-full px-1.5 text-xs font-semibold", active ? "bg-white/20" : "bg-primary/10 text-primary")}>{compared}</span>
             ) : null}
           </Link>
         );
@@ -144,7 +150,7 @@ function Header({ user }: { user: SessionUser }) {
   }
 
   return (
-    <header className="sticky top-0 z-30 flex items-center gap-3 border-b bg-card/95 px-4 py-3 backdrop-blur md:px-6">
+    <header className="sticky top-0 z-30 flex items-center gap-3 border-b bg-white/90 px-4 py-3 shadow-sm shadow-slate-900/5 backdrop-blur-md md:px-6">
       <Sheet open={open} onOpenChange={setOpen}>
         <Button
           type="button"
@@ -156,13 +162,16 @@ function Header({ user }: { user: SessionUser }) {
         >
           <Menu className="size-4" aria-hidden="true" />
         </Button>
-        <SheetContent side="left" className="w-72 p-0">
+        <SheetContent side="left" className="w-80 p-0">
           <SheetHeader className="sr-only">
             <SheetTitle>Menú</SheetTitle>
             <SheetDescription>Navegación principal</SheetDescription>
           </SheetHeader>
-          <Brand />
-          <Nav onNavigate={() => setOpen(false)} />
+          <div className="flex h-full flex-col">
+            <Brand />
+            <Nav onNavigate={() => setOpen(false)} />
+            <DevelopedBy className="border-t px-5 py-4" />
+          </div>
         </SheetContent>
       </Sheet>
       <form
@@ -174,19 +183,19 @@ function Header({ user }: { user: SessionUser }) {
         }}
       >
         <label htmlFor="header-search" className="sr-only">
-          Busca una empresa por NIT o razón social
+          Buscar empresa por nombre, NIT, actividad o sector
         </label>
         <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
         <Input
           id="header-search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Busca una empresa por NIT o razón social"
-          className="h-10 pl-9"
+          placeholder="Buscar empresa por nombre, NIT, actividad o sector"
+          className="h-11 rounded-xl bg-slate-50 pl-9"
         />
       </form>
       {canSeeAlerts ? (
-        <Button type="button" variant="outline" size="icon" className="relative" aria-label="Alertas no leídas" asChild>
+        <Button type="button" variant="outline" size="icon" className="relative size-11 rounded-xl" aria-label="Alertas no leídas" asChild>
           <Link href="/alertas">
             <Bell className="size-4" aria-hidden="true" />
             <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
@@ -197,7 +206,7 @@ function Header({ user }: { user: SessionUser }) {
       ) : null}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button type="button" variant="outline" className="h-10 max-w-48" data-testid="user-menu">
+          <Button type="button" variant="outline" className="h-11 max-w-48 rounded-xl" data-testid="user-menu">
             <span className="truncate">{user.nombre}</span>
           </Button>
         </DropdownMenuTrigger>

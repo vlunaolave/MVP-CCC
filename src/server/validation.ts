@@ -40,6 +40,10 @@ export const companyQuerySchema = z.object({
   ingresosMax: optionalNumber,
   activosMin: optionalNumber,
   activosMax: optionalNumber,
+  monitoreada: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((value) => (value === undefined ? undefined : value === "true")),
   sort: z.enum(["razonSocial", "nit", "sector", "municipio", "revenue", "totalAssets", "employees", "estadoMatricula"]).optional(),
   dir: z.enum(["asc", "desc"]).optional(),
 });

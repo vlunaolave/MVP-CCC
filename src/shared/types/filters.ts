@@ -24,6 +24,7 @@ export interface CompanyFilters {
   ingresosMax?: number;
   activosMin?: number;
   activosMax?: number;
+  monitoreada?: boolean;
   sort?: SortKey;
   dir?: SortDir;
 }

@@ -6,8 +6,8 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { FilterBar, FilterField, type FilterChip } from "@/shared/components/filter-panel";
 import { MonitorButton } from "@/features/companies";
 import { apiClient } from "@/shared/lib/api-client";
 import { useUiStore } from "@/shared/lib/ui-store";
@@ -15,6 +15,7 @@ import { EmptyState, ErrorState, LoadingBlock } from "@/shared/components/screen
 import { EnrollmentBadge } from "@/shared/components/status-badge";
 import type { EstadoMatricula, MonitoringItem } from "@/shared/types/domain";
 import { formatDisplayDate } from "@/shared/utils/dates";
+import { ESTADO_MATRICULA_LABEL } from "@/shared/utils/labels";
 
 const ALL = "todos";
 
@@ -42,24 +43,37 @@ export function MonitoringScreen() {
         <h1 className="text-2xl font-semibold tracking-tight">Monitoreo</h1>
         <p className="mt-1 text-sm text-muted-foreground">Empresas que sigues. El listado es tuyo: no se comparte con otros usuarios.</p>
       </div>
-      <form
-        className="grid gap-3 rounded-xl border bg-card p-4 shadow-sm md:grid-cols-[1fr_220px_auto]"
-        onSubmit={(event) => {
-          event.preventDefault();
-          setApplied({ q, estadoMatricula: estado === ALL ? "" : estado });
+      <FilterBar
+        mode="popover"
+        count={monitoringChips(applied).length}
+        chips={monitoringChips(applied)}
+        dirty={q !== applied.q || (estado === ALL ? "" : estado) !== applied.estadoMatricula}
+        onApply={() => setApplied({ q, estadoMatricula: estado === ALL ? "" : estado })}
+        onClear={() => {
+          setQ("");
+          setEstado(ALL);
+          setApplied({ q: "", estadoMatricula: "" });
+        }}
+        onRemove={(id) => {
+          if (id === "q") {
+            setQ("");
+            setApplied({ ...applied, q: "" });
+          }
+          if (id === "estado") {
+            setEstado(ALL);
+            setApplied({ ...applied, estadoMatricula: "" });
+          }
         }}
       >
-        <div className="grid gap-1.5">
-          <Label htmlFor="monitoring-q">Empresa o NIT</Label>
-          <Input id="monitoring-q" value={q} onChange={(event) => setQ(event.target.value)} />
-        </div>
-        <div className="grid gap-1.5">
-          <Label>Estado</Label>
+        <FilterField label="Empresa o NIT" pending={q !== applied.q}>
+          <Input id="monitoring-q" value={q} onChange={(event) => setQ(event.target.value)} placeholder="Nombre o NIT" />
+        </FilterField>
+        <FilterField label="Estado empresarial" pending={(estado === ALL ? "" : estado) !== applied.estadoMatricula}>
           <Select value={estado} onValueChange={setEstado}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full bg-white">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="z-[80]">
               <SelectItem value={ALL}>Todos</SelectItem>
               <SelectItem value="ACTIVA">Activa</SelectItem>
               <SelectItem value="SUSPENDIDA">Suspendida</SelectItem>
@@ -67,11 +81,8 @@ export function MonitoringScreen() {
               <SelectItem value="INACTIVA">Inactiva</SelectItem>
             </SelectContent>
           </Select>
-        </div>
-        <div className="flex items-end">
-          <Button type="submit">Filtrar</Button>
-        </div>
-      </form>
+        </FilterField>
+      </FilterBar>
       {query.isLoading ? <LoadingBlock /> : null}
       {query.isError ? <ErrorState onRetry={() => void query.refetch()} /> : null}
       {query.data && query.data.length === 0 ? (
@@ -106,4 +117,14 @@ export function MonitoringScreen() {
       ) : null}
     </div>
   );
+}
+
+function monitoringChips(applied: { q: string; estadoMatricula: string }): FilterChip[] {
+  const chips: FilterChip[] = [];
+  if (applied.q) chips.push({ id: "q", label: `Empresa: ${applied.q}` });
+  if (applied.estadoMatricula) {
+    const label = ESTADO_MATRICULA_LABEL[applied.estadoMatricula as EstadoMatricula] ?? applied.estadoMatricula;
+    chips.push({ id: "estado", label: `Estado: ${label}` });
+  }
+  return chips;
 }

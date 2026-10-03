@@ -15,8 +15,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { FilterBar, FilterField, FilterGroup, type FilterChip } from "@/shared/components/filter-panel";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { apiClient, apiErrorMessage } from "@/shared/lib/api-client";
 import { EmptyState, ErrorState, LoadingBlock } from "@/shared/components/screen-states";
@@ -58,6 +58,8 @@ export function AlertsScreen() {
       return data;
     },
   });
+  const chips = alertChips(filters);
+  const dirty = JSON.stringify(draft) !== JSON.stringify(filters);
   const markRead = useMutation({
     mutationFn: async (id: string) => {
       await apiClient.patch(`/api/alertas/${id}`, { leida: true });
@@ -80,47 +82,56 @@ export function AlertsScreen() {
           </p>
         </div>
       </div>
-      <form
-        className="grid gap-3 rounded-xl border bg-card p-4 shadow-sm md:grid-cols-3"
-        onSubmit={(event) => {
-          event.preventDefault();
-          setFilters(draft);
+      <FilterBar
+        count={chips.length}
+        chips={chips}
+        dirty={dirty}
+        onApply={() => setFilters(draft)}
+        onClear={() => {
+          const empty = { desde: "", hasta: "", q: "", companyId: "", tipo: ALL, severidad: ALL, leida: ALL };
+          setDraft(empty);
+          setFilters(empty);
+        }}
+        onRemove={(id) => {
+          const value = id === "desde" || id === "hasta" || id === "q" || id === "companyId" ? "" : ALL;
+          const next = { ...filters, [id]: value };
+          setDraft((current) => ({ ...current, [id]: value }));
+          setFilters(next);
         }}
       >
-        <Field label="Desde">
-          <Input type="date" value={draft.desde} onChange={(event) => setDraft({ ...draft, desde: event.target.value })} />
-        </Field>
-        <Field label="Hasta">
-          <Input type="date" value={draft.hasta} onChange={(event) => setDraft({ ...draft, hasta: event.target.value })} />
-        </Field>
-        <Field label="Empresa">
-          <Input value={draft.q} onChange={(event) => setDraft({ ...draft, q: event.target.value })} placeholder="Nombre o NIT" />
-        </Field>
-        <Choice label="Tipo" value={draft.tipo} onChange={(tipo) => setDraft({ ...draft, tipo })}>
-          <SelectItem value={ALL}>Todos</SelectItem>
-          {(Object.keys(EVENTO_LABEL) as TipoEvento[]).map((tipo) => (
-            <SelectItem key={tipo} value={tipo}>
-              {EVENTO_LABEL[tipo]}
-            </SelectItem>
-          ))}
-        </Choice>
-        <Choice label="Severidad" value={draft.severidad} onChange={(severidad) => setDraft({ ...draft, severidad })}>
-          <SelectItem value={ALL}>Todas</SelectItem>
-          {(Object.keys(SEVERIDAD_LABEL) as Severidad[]).map((severidad) => (
-            <SelectItem key={severidad} value={severidad}>
-              {SEVERIDAD_LABEL[severidad]}
-            </SelectItem>
-          ))}
-        </Choice>
-        <Choice label="Lectura" value={draft.leida} onChange={(leida) => setDraft({ ...draft, leida })}>
-          <SelectItem value={ALL}>Todas</SelectItem>
-          <SelectItem value="false">No leídas</SelectItem>
-          <SelectItem value="true">Leídas</SelectItem>
-        </Choice>
-        <div className="flex items-end">
-          <Button type="submit">Aplicar filtros</Button>
-        </div>
-      </form>
+        <FilterGroup title="Periodo">
+          <FilterField label="Desde" pending={draft.desde !== filters.desde}>
+            <Input type="date" value={draft.desde} onChange={(event) => setDraft({ ...draft, desde: event.target.value })} />
+          </FilterField>
+          <FilterField label="Hasta" pending={draft.hasta !== filters.hasta}>
+            <Input type="date" value={draft.hasta} onChange={(event) => setDraft({ ...draft, hasta: event.target.value })} />
+          </FilterField>
+        </FilterGroup>
+        <FilterGroup title="Empresa">
+          <FilterField label="Nombre o NIT" pending={draft.q !== filters.q}>
+            <Input value={draft.q} onChange={(event) => setDraft({ ...draft, q: event.target.value })} placeholder="Nombre o NIT" />
+          </FilterField>
+        </FilterGroup>
+        <FilterGroup title="Clasificación">
+          <Choice label="Tipo" value={draft.tipo} pending={draft.tipo !== filters.tipo} onChange={(tipo) => setDraft({ ...draft, tipo })}>
+            <SelectItem value={ALL}>Todos</SelectItem>
+            {(Object.keys(EVENTO_LABEL) as TipoEvento[]).map((tipo) => (
+              <SelectItem key={tipo} value={tipo}>{EVENTO_LABEL[tipo]}</SelectItem>
+            ))}
+          </Choice>
+          <Choice label="Severidad" value={draft.severidad} pending={draft.severidad !== filters.severidad} onChange={(severidad) => setDraft({ ...draft, severidad })}>
+            <SelectItem value={ALL}>Todas</SelectItem>
+            {(Object.keys(SEVERIDAD_LABEL) as Severidad[]).map((severidad) => (
+              <SelectItem key={severidad} value={severidad}>{SEVERIDAD_LABEL[severidad]}</SelectItem>
+            ))}
+          </Choice>
+          <Choice label="Lectura" value={draft.leida} pending={draft.leida !== filters.leida} onChange={(leida) => setDraft({ ...draft, leida })}>
+            <SelectItem value={ALL}>Todas</SelectItem>
+            <SelectItem value="false">No leídas</SelectItem>
+            <SelectItem value="true">Leídas</SelectItem>
+          </Choice>
+        </FilterGroup>
+      </FilterBar>
       {query.isLoading ? <LoadingBlock /> : null}
       {query.isError ? <ErrorState onRetry={() => void query.refetch()} /> : null}
       {query.data && query.data.items.length === 0 ? <EmptyState title="No hay alertas con estos filtros." /> : null}
@@ -217,13 +228,16 @@ function AlertActions({
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="grid gap-1.5">
-      <Label>{label}</Label>
-      {children}
-    </div>
-  );
+function alertChips(filters: { desde: string; hasta: string; q: string; companyId: string; tipo: string; severidad: string; leida: string }): FilterChip[] {
+  const chips: FilterChip[] = [];
+  if (filters.desde) chips.push({ id: "desde", label: `Desde: ${filters.desde}` });
+  if (filters.hasta) chips.push({ id: "hasta", label: `Hasta: ${filters.hasta}` });
+  if (filters.q) chips.push({ id: "q", label: `Empresa: ${filters.q}` });
+  if (filters.companyId) chips.push({ id: "companyId", label: "Empresa seleccionada" });
+  if (filters.tipo !== ALL) chips.push({ id: "tipo", label: `Tipo: ${EVENTO_LABEL[filters.tipo as TipoEvento] ?? filters.tipo}` });
+  if (filters.severidad !== ALL) chips.push({ id: "severidad", label: `Severidad: ${SEVERIDAD_LABEL[filters.severidad as Severidad] ?? filters.severidad}` });
+  if (filters.leida !== ALL) chips.push({ id: "leida", label: `Lectura: ${filters.leida === "true" ? "Leídas" : "No leídas"}` });
+  return chips;
 }
 
 function Choice({
@@ -231,21 +245,22 @@ function Choice({
   value,
   onChange,
   children,
+  pending = false,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   children: React.ReactNode;
+  pending?: boolean;
 }) {
   return (
-    <div className="grid gap-1.5">
-      <Label>{label}</Label>
+    <FilterField label={label} pending={pending}>
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="w-full">
+        <SelectTrigger className="w-full bg-white">
           <SelectValue />
         </SelectTrigger>
-        <SelectContent>{children}</SelectContent>
+        <SelectContent className="z-[80]">{children}</SelectContent>
       </Select>
-    </div>
+    </FilterField>
   );
 }

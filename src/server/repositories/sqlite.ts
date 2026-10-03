@@ -30,7 +30,7 @@ import type {
 import { SECTOR_CODIGOS } from "@/shared/types/domain";
 import type { AlertFilters, CompanyFilters, DashboardFilters, MonitoringFilters } from "@/shared/types/filters";
 import { buildCompanySummary } from "@/shared/utils/company-summary";
-import { dateOnly, formatAntiguedad, inDateRange, monthKey } from "@/shared/utils/dates";
+import { dateOnly, formatAntiguedad, inDateRange, latestMonthStats, monthKey } from "@/shared/utils/dates";
 import { DIRECTIVE_TYPES, LINK_TYPES, categoriaDeEvento } from "@/shared/utils/event-category";
 import {
   CATEGORIA_LABEL,
@@ -251,6 +251,9 @@ function matchesCompany(item: CompanyListItem, filters: CompanyFilters): boolean
     if (!hit) {
       return false;
     }
+  }
+  if (filters.monitoreada !== undefined && item.monitoreada !== filters.monitoreada) {
+    return false;
   }
   return true;
 }
@@ -473,6 +476,35 @@ async function relationsWithPeople(db: PrismaClient, company: ProfileRecord): Pr
     rolesByPerson.set(row.personId, list);
   }
   return attachVinculosByPerson(relations, rolesByPerson);
+}
+
+function buildAttention(
+  alertRows: {
+    companyId: string;
+    titulo: string;
+    fecha: Date;
+    company: { razonSocial: string; nit: string };
+  }[],
+): DashboardPayload["atencion"] {
+  const byCompany = new Map<string, DashboardPayload["atencion"][number]>();
+  for (const alert of alertRows) {
+    const current = byCompany.get(alert.companyId);
+    if (!current || alert.fecha.toISOString() > current.fecha) {
+      byCompany.set(alert.companyId, {
+        companyId: alert.companyId,
+        razonSocial: alert.company.razonSocial,
+        nit: alert.company.nit,
+        alertas: (current?.alertas ?? 0) + 1,
+        ultimoCambio: alert.titulo,
+        fecha: alert.fecha.toISOString(),
+      });
+      continue;
+    }
+    current.alertas += 1;
+  }
+  return [...byCompany.values()]
+    .sort((left, right) => right.alertas - left.alertas || right.fecha.localeCompare(left.fecha))
+    .slice(0, 6);
 }
 
 function countBy(values: string[]): { label: string; value: number }[] {
@@ -1092,6 +1124,41 @@ export class SqliteDashboardRepository implements DashboardRepository {
       return growth === null ? [] : [growth];
     });
     const ingresosAgregados = population.reduce((sum, company) => sum + (latestAmounts(company.periodos)?.revenue ?? 0), 0);
+    const monitorFirst = new Map<string, Date>();
+    for (const row of monitoredRows) {
+      const current = monitorFirst.get(row.companyId);
+      if (!current || row.fechaInicio < current) {
+        monitorFirst.set(row.companyId, row.fechaInicio);
+      }
+    }
+    const consultFirst = new Map<string, Date>();
+    for (const audit of audits) {
+      if (!audit.entidadId || !populationIds.has(audit.entidadId) || !inDateRange(audit.fecha.toISOString(), filters.desde, filters.hasta)) {
+        continue;
+      }
+      const current = consultFirst.get(audit.entidadId);
+      if (!current || audit.fecha < current) {
+        consultFirst.set(audit.entidadId, audit.fecha);
+      }
+    }
+    const atencion = buildAttention(alertRows);
+    const seenMonitor = new Set<string>();
+    const monitoreoReciente = [...monitoredRows]
+      .sort((left, right) => right.fechaInicio.getTime() - left.fechaInicio.getTime())
+      .filter((row) => {
+        if (seenMonitor.has(row.companyId)) {
+          return false;
+        }
+        seenMonitor.add(row.companyId);
+        return true;
+      })
+      .slice(0, 5)
+      .map((row) => ({
+        companyId: row.companyId,
+        razonSocial: row.company.razonSocial,
+        municipio: row.company.municipio,
+        fechaInicio: row.fechaInicio.toISOString(),
+      }));
     return {
       kpis: {
         disponibles: population.length,
@@ -1102,6 +1169,13 @@ export class SqliteDashboardRepository implements DashboardRepository {
         esal: population.filter((company) => company.tipoRegistro === "ESAL").length,
         ingresosAgregados,
         crecimientoPromedio: growths.length === 0 ? null : growths.reduce((sum, value) => sum + value, 0) / growths.length,
+        sectoresAnalizados: new Set(population.map((company) => company.sector)).size,
+        cambiosRecientes: new Set(alertRows.map((alert) => alert.companyId)).size,
+      },
+      contexto: {
+        alertas: latestMonthStats(alertRows.map((alert) => alert.fecha)),
+        monitoreo: latestMonthStats([...monitorFirst.values()]),
+        consultas: latestMonthStats([...consultFirst.values()]),
       },
       empresasPorTipo: countBy(population.map((company) => REGISTRO_LABEL[company.tipoRegistro])),
       empresasPorEstado: countBy(population.map((company) => ESTADO_MATRICULA_LABEL[company.estadoMatricula])),
@@ -1110,6 +1184,7 @@ export class SqliteDashboardRepository implements DashboardRepository {
       ),
       empresasPorSector: countBy(population.map((company) => SECTOR_LABEL[company.sector])),
       empresasPorDepartamento: countBy(population.map((company) => company.departamento)),
+      empresasPorMunicipio: countBy(population.map((company) => company.municipio)),
       empresasPorTamano: countBy(population.map((company) => TAMANO_LABEL[company.tamanoEmpresa])),
       alertasPorTipo: countBy(alertRows.map((alert) => EVENTO_LABEL[alert.tipo])),
       alertasPorCategoria: countBy(alertRows.map((alert) => CATEGORIA_LABEL[categoriaDeEvento(alert.tipo)])),
@@ -1121,6 +1196,8 @@ export class SqliteDashboardRepository implements DashboardRepository {
           .filter((row, index, list) => list.findIndex((item) => item.companyId === row.companyId) === index)
           .map((row) => row.company.municipio),
       ),
+      atencion,
+      monitoreoReciente,
       opciones: {
         municipios: [...new Set(companies.map((company) => company.municipio))].sort((a, b) =>
           a.localeCompare(b, "es"),
