@@ -11,7 +11,7 @@ export default function LoginPage() {
       <section className="login-stage relative overflow-hidden px-6 py-10 text-white lg:flex lg:min-h-screen lg:flex-col lg:justify-between lg:px-14 lg:py-12">
         <DataArtwork />
         <div className="relative z-10">
-          <div className="w-36 rounded-2xl bg-white p-3 shadow-2xl shadow-black/20 lg:w-44">
+          <div className="w-full max-w-xs rounded-2xl bg-white px-4 py-3 lg:max-w-sm">
             <CamaraLogo className="w-full" />
           </div>
           <h1 className="mt-8 max-w-xl text-4xl font-semibold tracking-tight lg:text-5xl">Inteligencia Empresarial</h1>
@@ -28,10 +28,8 @@ export default function LoginPage() {
           <LoginForm />
         </div>
         <footer className="mx-auto mt-8 flex flex-wrap items-center justify-center gap-3 text-sm text-muted-foreground">
-          <span>Desarrollado por Intelecto</span>
-          <span className="inline-flex rounded-md bg-black px-2 py-1">
-            <IntelectoLogo className="h-16 w-auto" />
-          </span>
+          <span>Desarrollado por</span>
+          <IntelectoLogo className="h-12 w-auto" />
         </footer>
       </section>
     </main>
