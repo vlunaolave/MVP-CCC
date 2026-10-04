@@ -335,6 +335,16 @@ export function AlertRulesScreen() {
   }
 }
 
+function displayValue(rule: RuleItem) {
+  if (!rule.valorReferencia) return "—";
+  const current = fieldById(rule.categoria, rule.campoObservado);
+  const number = Number(rule.valorReferencia);
+  if (!Number.isFinite(number)) return rule.valorReferencia;
+  if (rule.condicion === "VARIACION_MAYOR" || rule.condicion === "VARIACION_MENOR") return `${number} %`;
+  if (current?.kind === "percent") return `${Math.round(number * 1000) / 10} %`;
+  return rule.valorReferencia;
+}
+
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="grid gap-1.5">
