@@ -16,6 +16,7 @@ const tipoEventoSchema = z.enum([
   "NOTICIA",
   "NOMBRAMIENTO",
   "CAMBIO_PARTICIPACION",
+  "INDICADOR",
 ]);
 
 const optionalNumber = z.coerce.number().finite().optional();
@@ -73,6 +74,22 @@ export const dashboardQuerySchema = z.object({
   estadoMatricula: z.enum(["ACTIVA", "SUSPENDIDA", "CANCELADA", "INACTIVA"]).optional(),
   sector: z.enum(SECTOR_CODIGOS).optional(),
   tamanoEmpresa: z.enum(["MICRO", "PEQUENA", "MEDIANA", "GRANDE"]).optional(),
+});
+
+export const alertRuleBodySchema = z.object({
+  nombre: z.string().trim().min(3, "El nombre debe tener al menos 3 caracteres.").max(80),
+  descripcion: z.string().trim().min(3, "Agrega una descripción.").max(240),
+  categoria: z.enum(["REGISTRAL", "FINANCIERA", "PROPIEDAD", "DIRECTIVOS", "ACTIVIDAD", "UBICACION"]),
+  campoObservado: z.string().trim().min(1, "Selecciona el campo."),
+  condicion: z.enum(["CAMBIO", "IGUAL_A", "DISTINTO_DE", "MAYOR_QUE", "MENOR_QUE", "MAYOR_IGUAL", "MENOR_IGUAL", "VARIACION_MAYOR", "VARIACION_MENOR"]),
+  valorReferencia: z.string().trim().max(40).nullable().optional(),
+  severidad: z.enum(["INFORMATIVA", "ATENCION", "IMPORTANTE"]),
+  activa: z.boolean(),
+  alcance: z.enum(["TODAS", "MONITOREADAS"]),
+});
+
+export const alertRulePreviewSchema = alertRuleBodySchema.extend({
+  companyId: z.string().trim().min(1, "Selecciona una empresa."),
 });
 
 export const savedSearchSchema = z.object({

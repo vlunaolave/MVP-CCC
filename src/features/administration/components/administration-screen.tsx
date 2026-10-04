@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import Link from "next/link";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -37,8 +38,11 @@ export function AdministrationScreen() {
     <div className="grid gap-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Administración</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Usuarios, consulta de roles y parámetros de la demostración.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Usuarios, consulta de roles, parámetros y reglas de alerta.</p>
       </div>
+      <Button type="button" variant="outline" className="w-fit" asChild>
+        <Link href="/administracion/reglas-alerta">Reglas de alerta</Link>
+      </Button>
       <Tabs defaultValue="usuarios">
         <TabsList>
           <TabsTrigger value="usuarios">Usuarios</TabsTrigger>

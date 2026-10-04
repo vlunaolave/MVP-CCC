@@ -93,7 +93,7 @@ function statement(
   const assetMultiple = ASSET_TO_REVENUE[company.sector] + (unit(salt) - 0.5) * 0.16;
   const totalAssets = millions(revenue * assetMultiple);
   const debtRatio =
-    behavior === "endeudamiento" ? 0.68 + unit(salt) * 0.08 : behavior === "liquidez" ? 0.22 + unit(salt) * 0.08 : 0.36 + unit(salt) * 0.16;
+    behavior === "endeudamiento" ? 0.72 + unit(salt) * 0.06 : behavior === "liquidez" ? 0.22 + unit(salt) * 0.08 : 0.36 + unit(salt) * 0.16;
   const totalLiabilities = millions(totalAssets * debtRatio);
   const equity = totalAssets - totalLiabilities;
   const currentAssetShare = behavior === "liquidez" ? 0.74 : company.sector === "COMERCIO" ? 0.6 : 0.4 + unit(salt) * 0.12;

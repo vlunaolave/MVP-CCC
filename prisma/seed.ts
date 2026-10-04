@@ -3,10 +3,58 @@ import bcrypt from "bcryptjs";
 import { permissionCatalog, roleCatalog } from "./data/users";
 import { DemoDataSourceAdapter } from "../src/server/adapters/data-source";
 import { evaluateDemoRules } from "../src/server/services/alert-rules";
+import { draftFromEvaluation, snapshotFromPeriods } from "../src/server/services/alert-rule-evaluator";
+import type { PeriodAmounts } from "../src/server/services/financial-indicators";
 import { assertRelationIntegrity } from "../src/server/services/relation-integrity";
 import { prisma } from "../src/shared/lib/prisma";
 import { ROLE_PERMISSIONS } from "../src/shared/lib/permissions";
 import { dateOnly } from "../src/shared/utils/dates";
+
+function financialDrafts(dataset: Awaited<ReturnType<DemoDataSourceAdapter["loadReferenceData"]>>) {
+  const drafts = [];
+  for (const company of dataset.companies) {
+    const periods = dataset.financials
+      .filter((row) => row.companyId === company.id)
+      .map((row) => ({
+        year: row.year,
+        cutoffDate: row.cutoffDate,
+        revenue: row.revenue,
+        ebitda: row.ebitda,
+        operatingProfit: row.operatingProfit,
+        interestExpense: row.interestExpense,
+        netProfit: row.netProfit,
+        totalAssets: row.totalAssets,
+        totalLiabilities: row.totalLiabilities,
+        equity: row.equity,
+        employees: row.employees,
+        currentAssets: row.currentAssets ?? null,
+        currentLiabilities: row.currentLiabilities ?? null,
+        fuenteDatos: "DEMO",
+      }) satisfies PeriodAmounts);
+    if (periods.length === 0) continue;
+    const snapshot = snapshotFromPeriods(company.id, company.razonSocial, periods);
+    const fecha = periods[periods.length - 1]?.cutoffDate ?? "2025-12-31";
+    for (const rule of dataset.alertRules) {
+      if (!rule.activa || rule.tipoEvento !== "INDICADOR") continue;
+      const draft = draftFromEvaluation(
+        {
+          id: rule.id,
+          nombre: rule.nombre,
+          categoria: rule.categoria ?? "FINANCIERA",
+          campoObservado: rule.campoObservado,
+          condicion: rule.condicion,
+          valorReferencia: rule.valorReferencia,
+          severidad: rule.severidad,
+          tipoEvento: rule.tipoEvento,
+        },
+        snapshot,
+        fecha,
+      );
+      if (draft) drafts.push(draft);
+    }
+  }
+  return drafts;
+}
 
 function latestDate(dates: string[], fallback: string): Date {
   const sorted = [...dates].sort();
@@ -16,7 +64,10 @@ function latestDate(dates: string[], fallback: string): Date {
 async function main() {
   const dataset = await new DemoDataSourceAdapter().loadReferenceData();
   assertRelationIntegrity(dataset.relations);
-  const drafts = dataset.events.flatMap((event) => evaluateDemoRules(event, dataset.alertRules));
+  const drafts = [
+    ...dataset.events.flatMap((event) => evaluateDemoRules(event, dataset.alertRules)),
+    ...financialDrafts(dataset),
+  ];
 
   await prisma.auditLog.deleteMany();
   await prisma.alert.deleteMany();
