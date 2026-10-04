@@ -83,7 +83,7 @@ export function AppShell({ user, children }: { user: SessionUser; children: Reac
         <div className="flex min-w-0 flex-1 flex-col">
           <Header user={user} />
           <div className="border-b border-amber-200/80 bg-amber-50 px-4 py-2 text-xs leading-5 text-amber-950 md:px-6">{user.aviso}</div>
-          <main id="contenido" className="flex-1 bg-[radial-gradient(ellipse_at_top,oklch(0.94_0.03_250),transparent_42%)] px-4 py-6 md:px-8">
+          <main id="contenido" className="min-w-0 flex-1 bg-[radial-gradient(ellipse_at_top,oklch(0.94_0.03_250),transparent_42%)] px-4 py-6 md:px-8">
             {children}
           </main>
         </div>

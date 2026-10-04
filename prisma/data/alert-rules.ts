@@ -27,8 +27,8 @@ export const alertRules: AlertRuleSeed[] = [
   },
   {
     id: "rule-renovacion",
-    nombre: "Nueva renovación",
-    descripcion: "Regla demostrativa: avisa cuando se registra una nueva fecha de renovación.",
+    nombre: "Renovación de matrícula",
+    descripcion: "Avisa cuando cambia la fecha de renovación de la matrícula.",
     tipoEvento: "RENOVACION",
     campoObservado: "fechaRenovacion",
     condicion: "CAMBIO",

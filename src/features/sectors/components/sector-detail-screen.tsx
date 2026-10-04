@@ -7,6 +7,7 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiClient, apiErrorMessage } from "@/shared/lib/api-client";
+import { CurrencyTooltip, CurrencyYAxis } from "@/shared/components/currency-axis";
 import { DataSourceBadge } from "@/shared/components/data-source-badge";
 import { EmptyState, ErrorState, LoadingBlock } from "@/shared/components/screen-states";
 import type { SectorDetalle } from "@/shared/types/domain";
@@ -95,13 +96,13 @@ export function SectorDetailScreen({ codigo }: { codigo: string }) {
           {sector.evolucionIngresos.length === 0 ? (
             <EmptyState title="No hay periodos financieros en este sector." />
           ) : (
-            <div className="h-72">
+            <div className="h-72 min-w-0">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={sector.evolucionIngresos}>
+                <BarChart data={sector.evolucionIngresos} margin={{ left: 4, right: 8, top: 8, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="year" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} width={72} />
-                  <Tooltip />
+                  <CurrencyYAxis />
+                  <CurrencyTooltip />
                   <Bar dataKey="ingresos" name="Ingresos" fill="var(--chart-1)" radius={4} />
                 </BarChart>
               </ResponsiveContainer>
