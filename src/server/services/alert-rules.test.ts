@@ -31,7 +31,8 @@ describe("dataset de demostración", () => {
     expect(horizonte?.tipoRegistro).toBe("ESAL");
     expect(horizonte?.capital).toBeNull();
     expect(horizonte?.activos).toBeNull();
-    expect(financials.filter((period) => period.companyId === "co-horizonte")).toHaveLength(0);
+    expect(financials.filter((period) => period.companyId === "co-horizonte").length).toBeGreaterThanOrEqual(2);
+    expect(new Set(financials.map((period) => period.companyId)).size).toBe(companies.length);
     const directivos = relations.filter(
       (relation) =>
         relation.companyId === "co-innova" &&

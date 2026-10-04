@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { companies } from "../../../prisma/data/companies";
 import { financials } from "../../../prisma/data/financials";
 import { unspscClassifications } from "../../../prisma/data/unspsc";
 import { indicatorsFor, type PeriodAmounts } from "@/server/services/financial-indicators";
@@ -53,6 +54,19 @@ describe("estados de demostración", () => {
     const codes = unspscClassifications.filter((item) => item.companyId === "co-innova");
     expect(codes.length).toBeGreaterThan(1);
     expect(codes.filter((item) => item.isPrimary)).toHaveLength(1);
+  });
+
+  it("calcula indicadores para todas las empresas", () => {
+    const covered = new Set(financials.map((row) => row.companyId));
+    expect(covered.size).toBe(companies.length);
+    for (const companyId of covered) {
+      const rows = financials.filter((row) => row.companyId === companyId).map(amounts);
+      const indicators = indicatorsFor(rows);
+      expect(indicators.razonCorriente).not.toBeNull();
+      expect(indicators.nivelEndeudamiento).not.toBeNull();
+      expect(indicators.margenNeto).not.toBeNull();
+      expect(indicators.crecimientoIngresos).not.toBeNull();
+    }
   });
 
   it("no repite el mismo patrón de crecimiento en todo el padrón", () => {
