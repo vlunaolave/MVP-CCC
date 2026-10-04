@@ -12,8 +12,11 @@ import {
 
 function period(partial: Partial<PeriodAmounts> & Pick<PeriodAmounts, "year">): PeriodAmounts {
   return {
+    cutoffDate: `${partial.year}-12-31`,
     revenue: 100,
     ebitda: 20,
+    operatingProfit: 18,
+    interestExpense: 4,
     netProfit: 10,
     totalAssets: 50,
     totalLiabilities: 20,
@@ -21,6 +24,7 @@ function period(partial: Partial<PeriodAmounts> & Pick<PeriodAmounts, "year">): 
     employees: 10,
     currentAssets: 15,
     currentLiabilities: 10,
+    fuenteDatos: "DEMO",
     ...partial,
   };
 }
@@ -56,6 +60,8 @@ describe("indicadores financieros", () => {
         year: 2025,
         revenue: 4200000000,
         ebitda: 760000000,
+        operatingProfit: 700000000,
+        interestExpense: 74000000,
         netProfit: 470000000,
         totalAssets: 1980000000,
         totalLiabilities: 640000000,
@@ -65,10 +71,10 @@ describe("indicadores financieros", () => {
       }),
     ]);
     expect(result.crecimientoIngresos).toBeCloseTo(500000000 / 3700000000);
-    expect(formatPercent(result.crecimientoIngresos, true)).toBe("+13,5 %");
-    expect(formatVariation(result.crecimientoIngresos, 2024)).toBe("+13,5 % vs 2024");
-    expect(formatTimes(result.razonCorriente)).toBe("2,8");
-    expect(formatPercent(0, true)).toBe("0,0 %");
+    expect(formatPercent(result.crecimientoIngresos, true)).toBe("+13,51 %");
+    expect(formatVariation(result.crecimientoIngresos, 2024)).toBe("+13,51 % vs 2024");
+    expect(formatTimes(result.razonCorriente)).toBe("2,78x");
+    expect(formatPercent(0, true)).toBe("0,00 %");
   });
 
   it("no formatea NaN ni Infinity", () => {

@@ -27,6 +27,7 @@ async function main() {
   await prisma.timelineEvent.deleteMany();
   await prisma.companyRelation.deleteMany();
   await prisma.establishment.deleteMany();
+  await prisma.companyUnspscClassification.deleteMany();
   await prisma.companyFinancialPeriod.deleteMany();
   await prisma.person.deleteMany();
   await prisma.company.deleteMany();
@@ -150,9 +151,15 @@ async function main() {
         employees: period.employees,
         currentAssets: period.currentAssets,
         currentLiabilities: period.currentLiabilities,
+        operatingProfit: period.operatingProfit,
+        interestExpense: period.interestExpense,
+        cutoffDate: dateOnly(period.cutoffDate),
         fuenteDatos: "DEMO",
       },
     });
+  }
+  for (const item of dataset.unspsc) {
+    await prisma.companyUnspscClassification.create({ data: item });
   }
   for (const benchmark of dataset.benchmarks) {
     await prisma.sectorBenchmark.create({ data: { ...benchmark, fuenteDatos: "DEMO" } });

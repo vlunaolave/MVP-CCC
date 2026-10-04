@@ -45,6 +45,7 @@ import {
 import { attachVinculosByPerson } from "@/shared/utils/person-relations";
 import { includesText } from "@/shared/utils/text";
 import {
+  FUENTE_DEMO,
   difference,
   indicatorsBetween,
   indicatorsByYear,
@@ -86,8 +87,11 @@ function readChange(value: Prisma.JsonValue | null): TimelineItem["metadata"] {
 
 type PeriodRow = {
   year: number;
+  cutoffDate: Date;
   revenue: Prisma.Decimal;
   ebitda: Prisma.Decimal;
+  operatingProfit: Prisma.Decimal;
+  interestExpense: Prisma.Decimal;
   netProfit: Prisma.Decimal;
   totalAssets: Prisma.Decimal;
   totalLiabilities: Prisma.Decimal;
@@ -95,13 +99,17 @@ type PeriodRow = {
   employees: number;
   currentAssets: Prisma.Decimal | null;
   currentLiabilities: Prisma.Decimal | null;
+  fuenteDatos: string;
 };
 
 function toAmounts(period: PeriodRow): PeriodAmounts {
   return {
     year: period.year,
+    cutoffDate: period.cutoffDate.toISOString().slice(0, 10),
     revenue: money(period.revenue) ?? 0,
     ebitda: money(period.ebitda) ?? 0,
+    operatingProfit: money(period.operatingProfit) ?? 0,
+    interestExpense: money(period.interestExpense) ?? 0,
     netProfit: money(period.netProfit) ?? 0,
     totalAssets: money(period.totalAssets) ?? 0,
     totalLiabilities: money(period.totalLiabilities) ?? 0,
@@ -109,6 +117,7 @@ function toAmounts(period: PeriodRow): PeriodAmounts {
     employees: period.employees,
     currentAssets: money(period.currentAssets),
     currentLiabilities: money(period.currentLiabilities),
+    fuenteDatos: period.fuenteDatos,
   };
 }
 
@@ -117,7 +126,10 @@ function latestAmounts(periods: PeriodRow[]): PeriodAmounts | null {
   return sorted[sorted.length - 1] ?? null;
 }
 
-function toListItem(company: CompanyRecord & { periodos?: PeriodRow[] }, monitoreada: boolean): CompanyListItem {
+function toListItem(
+  company: CompanyRecord & { periodos?: PeriodRow[]; clasificaciones?: { code: string }[] },
+  monitoreada: boolean,
+): CompanyListItem {
   const latest = latestAmounts(company.periodos ?? []);
   return {
     id: company.id,
@@ -138,6 +150,7 @@ function toListItem(company: CompanyRecord & { periodos?: PeriodRow[] }, monitor
     numeroEmpleados: company.numeroEmpleados ?? latest?.employees ?? null,
     ingresos: latest?.revenue ?? null,
     activosEstados: latest?.totalAssets ?? null,
+    unspscCodes: (company.clasificaciones ?? []).map((item) => item.code),
   };
 }
 
@@ -212,7 +225,8 @@ function matchesCompany(item: CompanyListItem, filters: CompanyFilters): boolean
       includesText(item.nombreComercial, query) ||
       includesText(item.actividadEconomicaCodigo, query) ||
       includesText(item.actividadEconomicaDescripcion, query) ||
-      includesText(SECTOR_LABEL[item.sector], query);
+      includesText(SECTOR_LABEL[item.sector], query) ||
+      item.unspscCodes.some((code) => includesText(code, query));
     if (!hit) {
       return false;
     }
@@ -254,6 +268,13 @@ function matchesCompany(item: CompanyListItem, filters: CompanyFilters): boolean
   }
   if (filters.monitoreada !== undefined && item.monitoreada !== filters.monitoreada) {
     return false;
+  }
+  if (filters.unspsc?.trim()) {
+    const needle = filters.unspsc.replace(/\s/g, "");
+    const hit = item.unspscCodes.some((code) => code.replace(/\s/g, "").includes(needle));
+    if (!hit) {
+      return false;
+    }
   }
   return true;
 }
@@ -522,7 +543,7 @@ export class SqliteCompanyRepository implements CompanyRepository {
 
   async search(userId: string, filters: CompanyFilters) {
     const [companies, monitored, audits] = await Promise.all([
-      this.db.company.findMany({ orderBy: { razonSocial: "asc" }, include: { periodos: true } }),
+      this.db.company.findMany({ orderBy: { razonSocial: "asc" }, include: { periodos: true, clasificaciones: true } }),
       this.db.monitoredCompany.findMany({ where: { userId }, select: { companyId: true } }),
       this.db.auditLog.findMany({
         where: { userId, accion: "CONSULTA_EMPRESA" },
@@ -619,7 +640,7 @@ export class SqliteCompanyRepository implements CompanyRepository {
   async finances(id: string): Promise<FinancePayload | null> {
     const company = await this.db.company.findUnique({
       where: { id },
-      include: { periodos: { orderBy: { year: "asc" } } },
+      include: { periodos: { orderBy: { year: "asc" } }, clasificaciones: { orderBy: [{ isPrimary: "desc" }, { code: "asc" }] } },
     });
     if (!company) {
       return null;
@@ -628,7 +649,19 @@ export class SqliteCompanyRepository implements CompanyRepository {
     const byYear = indicatorsByYear(periods);
     return {
       fuente: "DEMO",
+      fuenteEtiqueta: FUENTE_DEMO,
       indicadores: indicatorsFor(periods),
+      unspsc: company.clasificaciones.map((item) => ({
+        id: item.id,
+        code: item.code,
+        segment: item.segment,
+        family: item.family,
+        clase: item.clase,
+        commodity: item.commodity,
+        description: item.description,
+        isPrimary: item.isPrimary,
+        clasificacion: `Segmento ${item.segment} · Familia ${item.family} · Clase ${item.clase}`,
+      })),
       periodos: periods.map((period) => ({
         ...period,
         indicadores: byYear.get(period.year) ?? indicatorsFor([]),
@@ -785,8 +818,11 @@ function benchmarkPeriod(row: {
 }): PeriodAmounts {
   return {
     year: row.year,
+    cutoffDate: `${row.year}-12-31`,
     revenue: money(row.avgRevenue) ?? 0,
     ebitda: money(row.avgEbitda) ?? 0,
+    operatingProfit: money(row.avgEbitda) ?? 0,
+    interestExpense: 0,
     netProfit: money(row.avgNetProfit) ?? 0,
     totalAssets: money(row.avgAssets) ?? 0,
     totalLiabilities: money(row.avgLiabilities) ?? 0,
@@ -794,6 +830,7 @@ function benchmarkPeriod(row: {
     employees: Math.round(money(row.avgEmployees) ?? 0),
     currentAssets: null,
     currentLiabilities: null,
+    fuenteDatos: "DEMO",
   };
 }
 

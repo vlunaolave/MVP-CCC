@@ -12,7 +12,7 @@ import { DataSourceBadge } from "@/shared/components/data-source-badge";
 import { ErrorState, LoadingBlock } from "@/shared/components/screen-states";
 import type { SectorResumen } from "@/shared/types/domain";
 import { formatPercent } from "@/server/services/financial-indicators";
-import { formatMoney } from "@/shared/utils/labels";
+import { formatCOPCompact } from "@/shared/utils/format";
 
 const ACCENTS = ["bg-blue-600", "bg-cyan-600", "bg-violet-600", "bg-emerald-600", "bg-orange-500", "bg-fuchsia-600", "bg-sky-700"];
 
@@ -73,7 +73,7 @@ export function SectorsScreen() {
                 </CardHeader>
                 <CardContent className="grid gap-1 text-sm">
                   <p>{sector.empresas} empresas</p>
-                  <p>Ingresos agregados {formatMoney(sector.ingresosAgregados)}</p>
+                  <p>Ingresos agregados {formatCOPCompact(sector.ingresosAgregados)}</p>
                   <p>{sector.empleados} empleados</p>
                   <p>Crecimiento promedio {formatPercent(sector.crecimientoPromedio, true)}</p>
                 </CardContent>

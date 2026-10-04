@@ -40,6 +40,7 @@ export const companyQuerySchema = z.object({
   ingresosMax: optionalNumber,
   activosMin: optionalNumber,
   activosMax: optionalNumber,
+  unspsc: z.string().trim().optional(),
   monitoreada: z
     .enum(["true", "false"])
     .optional()

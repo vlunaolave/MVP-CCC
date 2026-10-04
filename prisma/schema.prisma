@@ -230,6 +230,7 @@ model Company {
   alertas          Alert[]
   monitoreos       MonitoredCompany[]
   periodos         CompanyFinancialPeriod[]
+  clasificaciones  CompanyUnspscClassification[]
   listas           WatchlistItem[]
 
   @@index([razonSocial])
@@ -372,20 +373,40 @@ model CompanyFinancialPeriod {
   id                  String   @id @default(uuid())
   companyId           String
   year                Int
+  cutoffDate          DateTime @default(now())
   revenue             Decimal
-  ebitda              Decimal
-  netProfit           Decimal
+  currentAssets       Decimal?
   totalAssets         Decimal
+  currentLiabilities  Decimal?
   totalLiabilities    Decimal
   equity              Decimal
+  operatingProfit     Decimal  @default(0)
+  netProfit           Decimal
+  interestExpense     Decimal  @default(0)
+  ebitda              Decimal
   employees           Int
-  currentAssets       Decimal?
-  currentLiabilities  Decimal?
   fuenteDatos         String   @default("DEMO")
 
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@unique([companyId, year])
+}
+
+model CompanyUnspscClassification {
+  id          String  @id @default(uuid())
+  companyId   String
+  code        String
+  segment     String
+  family      String
+  clase       String
+  commodity   String
+  description String
+  isPrimary   Boolean @default(false)
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, code])
+  @@index([code])
 }
 
 model SectorBenchmark {

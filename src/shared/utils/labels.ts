@@ -126,13 +126,4 @@ export const EVENTO_LABEL: Record<TipoEvento, string> = {
   CAMBIO_PARTICIPACION: "Cambio de participación",
 };
 
-export function formatMoney(value: number | null | undefined): string {
-  if (value === null || value === undefined || !Number.isFinite(value)) {
-    return "Sin información";
-  }
-  return new Intl.NumberFormat("es-CO", {
-    style: "currency",
-    currency: "COP",
-    maximumFractionDigits: 0,
-  }).format(value);
-}
+export { formatCOP as formatMoney } from "@/shared/utils/format";

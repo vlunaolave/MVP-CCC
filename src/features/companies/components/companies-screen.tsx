@@ -51,6 +51,7 @@ type ExplorerFilters = {
   activosMin: string;
   activosMax: string;
   monitoreada: string;
+  unspsc: string;
   sort: SortKey;
   dir: SortDir;
 };
@@ -70,6 +71,7 @@ const FILTER_KEYS = [
   "activosMin",
   "activosMax",
   "monitoreada",
+  "unspsc",
 ] as const;
 
 function readFilters(params: URLSearchParams): ExplorerFilters {
@@ -89,6 +91,7 @@ function readFilters(params: URLSearchParams): ExplorerFilters {
     activosMin: params.get("activosMin") ?? "",
     activosMax: params.get("activosMax") ?? "",
     monitoreada: params.get("monitoreada") ?? "",
+    unspsc: params.get("unspsc") ?? "",
     sort: (params.get("sort") ?? "razonSocial") as SortKey,
     dir: (params.get("dir") ?? "asc") as SortDir,
   };
@@ -191,6 +194,8 @@ export function CompaniesScreen() {
       cleared.municipio = "";
     } else if (id === "departamento") {
       cleared.departamento = "";
+    } else if (id === "unspsc") {
+      cleared.unspsc = "";
     }
     setDraft((current) => ({ ...current, ...cleared }));
     push({ ...filters, ...cleared });
@@ -265,6 +270,9 @@ export function CompaniesScreen() {
               <SelectItem key={actividad.codigo} value={actividad.codigo}>{actividad.codigo} · {actividad.descripcion}</SelectItem>
             ))}
           </Choice>
+          <FilterField label="Código UNSPSC" pending={draft.unspsc !== filters.unspsc}>
+            <Input id="unspsc" name="unspsc" value={draft.unspsc} placeholder="Ej. 43232304" onChange={(event) => setDraft({ ...draft, unspsc: event.target.value })} />
+          </FilterField>
           <Choice label="Tamaño" value={draft.tamanoEmpresa || ALL} pending={draft.tamanoEmpresa !== filters.tamanoEmpresa} onChange={(tamanoEmpresa) => setDraft({ ...draft, tamanoEmpresa: tamanoEmpresa === ALL ? "" : tamanoEmpresa })}>
             <SelectItem value={ALL}>Todos</SelectItem>
             {(Object.keys(TAMANO_LABEL) as TamanoEmpresa[]).map((key) => (
@@ -445,6 +453,7 @@ function companyChips(filters: ExplorerFilters, data: CompanySearchPayload | und
   if (filters.tipoRegistro) chips.push({ id: "tipoRegistro", label: `Tipo: ${REGISTRO_LABEL[filters.tipoRegistro as TipoRegistro] ?? filters.tipoRegistro}` });
   if (filters.estadoMatricula) chips.push({ id: "estadoMatricula", label: `Estado: ${ESTADO_MATRICULA_LABEL[filters.estadoMatricula as EstadoMatricula] ?? filters.estadoMatricula}` });
   if (filters.monitoreada) chips.push({ id: "monitoreada", label: `Monitoreada: ${filters.monitoreada === "true" ? "Sí" : "No"}` });
+  if (filters.unspsc) chips.push({ id: "unspsc", label: `UNSPSC: ${filters.unspsc}` });
   return chips;
 }
 

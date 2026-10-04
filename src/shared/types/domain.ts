@@ -127,6 +127,7 @@ export interface CompanyListItem {
   numeroEmpleados: number | null;
   ingresos: number | null;
   activosEstados: number | null;
+  unspscCodes: string[];
 }
 
 export interface CompanyProfile extends CompanyListItem {
@@ -196,15 +197,22 @@ export interface IndicatorSet {
   roa: number | null;
   roe: number | null;
   razonCorriente: number | null;
+  capitalTrabajo: number | null;
+  nivelEndeudamiento: number | null;
   deudaPatrimonio: number | null;
+  coberturaIntereses: number | null;
   crecimientoIngresos: number | null;
   crecimientoActivos: number | null;
+  crecimientoPatrimonio: number | null;
 }
 
 export interface FinancialPeriod {
   year: number;
+  cutoffDate: string;
   revenue: number;
   ebitda: number;
+  operatingProfit: number;
+  interestExpense: number;
   netProfit: number;
   totalAssets: number;
   totalLiabilities: number;
@@ -212,13 +220,28 @@ export interface FinancialPeriod {
   employees: number;
   currentAssets: number | null;
   currentLiabilities: number | null;
+  fuenteDatos: string;
   indicadores: IndicatorSet;
+}
+
+export interface UnspscClassification {
+  id: string;
+  code: string;
+  segment: string;
+  family: string;
+  clase: string;
+  commodity: string;
+  description: string;
+  isPrimary: boolean;
+  clasificacion: string;
 }
 
 export interface FinancePayload {
   periodos: FinancialPeriod[];
   indicadores: IndicatorSet;
   fuente: "DEMO";
+  fuenteEtiqueta: string;
+  unspsc: UnspscClassification[];
 }
 
 export interface SimilarItem {
