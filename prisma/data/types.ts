@@ -145,8 +145,11 @@ export interface FinancialSeed {
   id: string;
   companyId: string;
   year: number;
+  cutoffDate: string;
   revenue: number;
   ebitda: number;
+  operatingProfit: number;
+  interestExpense: number;
   netProfit: number;
   totalAssets: number;
   totalLiabilities: number;
@@ -154,6 +157,18 @@ export interface FinancialSeed {
   employees: number;
   currentAssets?: number;
   currentLiabilities?: number;
+}
+
+export interface UnspscSeed {
+  id: string;
+  companyId: string;
+  code: string;
+  segment: string;
+  family: string;
+  clase: string;
+  commodity: string;
+  description: string;
+  isPrimary: boolean;
 }
 
 export interface BenchmarkSeed {
@@ -190,6 +205,7 @@ export interface ReferenceDataset {
   initialAudit: AuditSeed[];
   settings: SettingSeed[];
   financials: FinancialSeed[];
+  unspsc: UnspscSeed[];
   benchmarks: BenchmarkSeed[];
   watchlists: WatchlistSeed[];
 }

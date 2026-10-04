@@ -16,7 +16,8 @@ import { EmptyState, ErrorState, LoadingBlock } from "@/shared/components/screen
 import type { DashboardPayload, TamanoEmpresa } from "@/shared/types/domain";
 import { SECTOR_CODIGOS } from "@/shared/types/domain";
 import { formatPercent } from "@/server/services/financial-indicators";
-import { ESTADO_MATRICULA_LABEL, SECTOR_LABEL, TAMANO_LABEL, formatMoney } from "@/shared/utils/labels";
+import { formatCOPCompact } from "@/shared/utils/format";
+import { ESTADO_MATRICULA_LABEL, SECTOR_LABEL, TAMANO_LABEL } from "@/shared/utils/labels";
 import { formatDisplayDate } from "@/shared/utils/dates";
 
 const ALL = "todos";
@@ -151,7 +152,7 @@ export function DashboardScreen() {
             <KpiCard label="Alertas generadas" value={String(query.data.kpis.alertasGeneradas)} hint={monthMovement(query.data.contexto.alertas)} icon={Bell} tone="orange" href={canAlerts ? "/alertas" : undefined} delay={150} />
             <KpiCard label="Sectores analizados" value={String(query.data.kpis.sectoresAnalizados)} hint="Con empresas en el corte" icon={Layers} tone="violet" delay={200} />
             <KpiCard label="Empresas con cambios recientes" value={String(query.data.kpis.cambiosRecientes)} hint="Con al menos una alerta" icon={Activity} tone="green" delay={250} />
-            <KpiCard label="Ingresos agregados" value={formatMoney(query.data.kpis.ingresosAgregados)} icon={Wallet} tone="blue" delay={300} />
+            <KpiCard label="Ingresos agregados" value={formatCOPCompact(query.data.kpis.ingresosAgregados)} icon={Wallet} tone="blue" delay={300} />
             <KpiCard label="Crecimiento promedio" value={formatPercent(query.data.kpis.crecimientoPromedio, true)} icon={TrendingUp} tone="green" delay={350} />
           </section>
           <section className="grid gap-4 lg:grid-cols-2">

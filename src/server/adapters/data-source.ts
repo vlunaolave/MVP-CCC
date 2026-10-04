@@ -7,6 +7,7 @@ import { people } from "../../../prisma/data/people";
 import { relations } from "../../../prisma/data/relations";
 import { benchmarks } from "../../../prisma/data/benchmarks";
 import { financials } from "../../../prisma/data/financials";
+import { unspscClassifications } from "../../../prisma/data/unspsc";
 import { initialAudit, monitoringSeed, settings, users } from "../../../prisma/data/users";
 import { watchlists } from "../../../prisma/data/watchlists";
 import { DataSourceNotImplemented } from "@/server/errors";
@@ -29,6 +30,7 @@ export class DemoDataSourceAdapter implements DataSourceAdapter {
       initialAudit,
       settings,
       financials,
+      unspsc: unspscClassifications,
       benchmarks,
       watchlists,
     };

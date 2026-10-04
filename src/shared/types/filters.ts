@@ -25,6 +25,7 @@ export interface CompanyFilters {
   activosMin?: number;
   activosMax?: number;
   monitoreada?: boolean;
+  unspsc?: string;
   sort?: SortKey;
   dir?: SortDir;
 }

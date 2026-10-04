@@ -1,68 +1,122 @@
 import { companies } from "./companies";
-import type { FinancialSeed } from "./types";
+import type { CompanySeed, FinancialSeed } from "./types";
 
-const innova: FinancialSeed[] = [
-  row("co-innova", 2021, 2100000000, 320000000, 180000000, 980000000, 410000000, 570000000, 28, 420000000, 210000000),
-  row("co-innova", 2022, 2600000000, 410000000, 240000000, 1200000000, 480000000, 720000000, 33, 510000000, 240000000),
-  row("co-innova", 2023, 3100000000, 520000000, 310000000, 1450000000, 520000000, 930000000, 39, 640000000, 260000000),
-  row("co-innova", 2024, 3700000000, 640000000, 390000000, 1720000000, 590000000, 1130000000, 44, 760000000, 300000000),
-  row("co-innova", 2025, 4200000000, 760000000, 470000000, 1980000000, 640000000, 1340000000, 48, 890000000, 320000000),
-];
+type Behavior = "crecimiento" | "estable" | "disminucion" | "endeudamiento" | "liquidez";
 
-const series: Record<string, number[]> = {
-  "co-mercado": [980000000, 1120000000, 1290000000, 1480000000],
-  "co-ladrillo": [5400000000, 5900000000, 6400000000, 7050000000],
-  "co-punto": [410000000, 470000000, 530000000, 610000000],
-  "co-metal": [8600000000, 9400000000, 10300000000, 11250000000],
-  "co-andes": [2100000000, 2360000000, 2640000000, 2980000000],
-  "co-bienestar": [1540000000, 1710000000, 1890000000, 2120000000],
-  "co-andina-soft": [2680000000, 3010000000, 3380000000, 3800000000],
-  "co-codigo-sur": [3250000000, 3650000000, 4100000000, 4600000000],
-  "co-nodo-cali": [2160000000, 2440000000, 2750000000, 3100000000],
+const BEHAVIORS: Behavior[] = ["crecimiento", "estable", "disminucion", "endeudamiento", "liquidez"];
+
+const EMPTY = new Set(["co-horizonte", "co-faro", "co-semilla", "co-recicladores", "co-horno", "co-cafe", "co-marea", "co-vitrina"]);
+
+const ASSET_TO_REVENUE: Record<CompanySeed["sector"], number> = {
+  TECNOLOGIA: 0.92,
+  COMERCIO: 0.48,
+  CONSTRUCCION: 1.85,
+  SERVICIOS: 0.68,
+  INDUSTRIA: 1.65,
+  TRANSPORTE: 1.42,
+  SALUD: 1.12,
 };
 
-const mix: Record<string, [number, number, number, number]> = {
-  "co-mercado": [0.08, 0.04, 0.46, 0.41],
-  "co-ladrillo": [0.14, 0.07, 0.72, 0.46],
-  "co-punto": [0.18, 0.09, 0.4, 0.33],
-  "co-metal": [0.17, 0.08, 0.81, 0.44],
-  "co-andes": [0.13, 0.06, 0.58, 0.39],
-  "co-bienestar": [0.15, 0.07, 0.63, 0.36],
-  "co-andina-soft": [0.19, 0.11, 0.48, 0.34],
-  "co-codigo-sur": [0.18, 0.1, 0.51, 0.37],
-  "co-nodo-cali": [0.145, 0.084, 0.52, 0.44],
+const OPERATING_MARGIN: Record<CompanySeed["sector"], number> = {
+  TECNOLOGIA: 0.16,
+  COMERCIO: 0.045,
+  CONSTRUCCION: 0.08,
+  SERVICIOS: 0.11,
+  INDUSTRIA: 0.09,
+  TRANSPORTE: 0.07,
+  SALUD: 0.1,
 };
 
-const empty = new Set([
-  "co-horizonte",
-  "co-faro",
-  "co-semilla",
-  "co-recicladores",
-  "co-horno",
-  "co-cafe",
-  "co-marea",
-  "co-vitrina",
-]);
+function hash(value: string): number {
+  let result = 0;
+  for (const char of value) {
+    result = (result * 33 + char.charCodeAt(0)) >>> 0;
+  }
+  return result;
+}
 
-function row(
-  companyId: string,
+function millions(value: number): number {
+  return Math.round(value / 1_000_000) * 1_000_000;
+}
+
+function unit(seed: number): number {
+  return (seed % 1000) / 1000;
+}
+
+function behaviorOf(companyId: string): Behavior {
+  return BEHAVIORS[hash(companyId) % BEHAVIORS.length] ?? "estable";
+}
+
+function latestRevenue(company: CompanySeed): number {
+  const spread = unit(hash(`${company.id}-rev`));
+  if (company.tamanoEmpresa === "MICRO") return millions(140_000_000 + spread * 260_000_000);
+  if (company.tamanoEmpresa === "PEQUENA") return millions(700_000_000 + spread * 1_600_000_000);
+  if (company.tamanoEmpresa === "MEDIANA") return millions(2_800_000_000 + spread * 8_000_000_000);
+  return millions(16_000_000_000 + spread * 40_000_000_000);
+}
+
+function yearsFor(company: CompanySeed): number[] {
+  if (company.id === "co-innova") {
+    return [2021, 2022, 2023, 2024, 2025];
+  }
+  const founded = company.fechaConstitucion ? Number(company.fechaConstitucion.slice(0, 4)) : 2024;
+  const start = Math.max(2021, Math.min(Number.isFinite(founded) ? founded : 2024, 2025));
+  const years: number[] = [];
+  for (let year = start; year <= 2025; year += 1) {
+    years.push(year);
+  }
+  return years.length > 0 ? years : [2025];
+}
+
+function revenuePath(latest: number, count: number, behavior: Behavior, salt: number): number[] {
+  return Array.from({ length: count }, (_, index) => {
+    const progress = count === 1 ? 1 : index / (count - 1);
+    let factor = 1;
+    if (behavior === "crecimiento") factor = 0.58 + 0.42 * progress;
+    else if (behavior === "estable") factor = 0.94 + ((index + salt) % 3) * 0.03;
+    else if (behavior === "disminucion") factor = 0.72 + 0.4 * Math.sin(progress * Math.PI);
+    else if (behavior === "endeudamiento") factor = 0.82 + 0.18 * progress;
+    else factor = 0.7 + 0.3 * progress;
+    return Math.max(millions(latest * factor), 20_000_000);
+  });
+}
+
+function statement(
+  company: CompanySeed,
   year: number,
   revenue: number,
-  ebitda: number,
-  netProfit: number,
-  totalAssets: number,
-  totalLiabilities: number,
-  equity: number,
   employees: number,
-  currentAssets: number,
-  currentLiabilities: number,
+  behavior: Behavior,
+  index: number,
 ): FinancialSeed {
+  const salt = hash(`${company.id}-${year}`);
+  const assetMultiple = ASSET_TO_REVENUE[company.sector] + (unit(salt) - 0.5) * 0.16;
+  const totalAssets = millions(revenue * assetMultiple);
+  const debtRatio =
+    behavior === "endeudamiento" ? 0.68 + unit(salt) * 0.08 : behavior === "liquidez" ? 0.22 + unit(salt) * 0.08 : 0.36 + unit(salt) * 0.16;
+  const totalLiabilities = millions(totalAssets * debtRatio);
+  const equity = totalAssets - totalLiabilities;
+  const currentAssetShare = behavior === "liquidez" ? 0.74 : company.sector === "COMERCIO" ? 0.6 : 0.4 + unit(salt) * 0.12;
+  const currentAssets = Math.min(totalAssets, millions(totalAssets * currentAssetShare));
+  const currentLiabilityShare = behavior === "liquidez" ? 0.22 : 0.46 + unit(salt) * 0.08;
+  const currentLiabilities = Math.min(totalLiabilities, millions(totalLiabilities * currentLiabilityShare));
+  const margin = OPERATING_MARGIN[company.sector] * (behavior === "disminucion" && index > 0 ? 0.85 : 1);
+  const operatingProfit = millions(revenue * margin);
+  const interestRate = behavior === "endeudamiento" ? 0.13 : 0.08 + unit(salt) * 0.03;
+  const interestExpense = millions(Math.max(totalLiabilities * interestRate, totalLiabilities > 0 ? 1_000_000 : 0));
+  const ebitda = operatingProfit + millions(totalAssets * 0.035);
+  const pretax = operatingProfit - interestExpense;
+  const tax = pretax > 0 ? millions(pretax * 0.35) : 0;
+  const netProfit = pretax - tax;
   return {
-    id: `fin-${companyId}-${year}`,
-    companyId,
+    id: `fin-${company.id}-${year}`,
+    companyId: company.id,
     year,
+    cutoffDate: `${year}-12-31`,
     revenue,
     ebitda,
+    operatingProfit,
+    interestExpense,
     netProfit,
     totalAssets,
     totalLiabilities,
@@ -73,52 +127,23 @@ function row(
   };
 }
 
-function fromMix(companyId: string, year: number, revenue: number, employees: number): FinancialSeed {
-  const [ebitdaRate, netRate, assetRate, liabilityRate] = mix[companyId] ?? [0.16, 0.08, 0.5, 0.4];
-  const ebitda = Math.round(revenue * ebitdaRate);
-  const netProfit = Math.round(revenue * netRate);
-  const totalAssets = Math.round(revenue * assetRate);
-  const totalLiabilities = Math.round(totalAssets * liabilityRate);
-  const equity = totalAssets - totalLiabilities;
-  return row(
-    companyId,
-    year,
-    revenue,
-    ebitda,
-    netProfit,
-    totalAssets,
-    totalLiabilities,
-    equity,
-    employees,
-    Math.round(totalAssets * 0.41),
-    Math.round(totalLiabilities * 0.47),
-  );
+function employeesAt(company: CompanySeed, index: number, count: number): number {
+  const latest = Math.max(1, company.numeroEmpleados ?? 8);
+  const stepsBack = count - 1 - index;
+  return Math.max(1, latest - stepsBack * Math.max(1, Math.round(latest * 0.06)));
 }
 
-const headcount = new Map(companies.map((company) => [company.id, company.numeroEmpleados ?? 8]));
-
-function staff(companyId: string, indexFromEnd: number): number {
-  return Math.max(1, (headcount.get(companyId) ?? 8) - indexFromEnd * 3);
-}
-
-const multiYear: FinancialSeed[] = Object.entries(series).flatMap(([companyId, revenues]) =>
-  revenues.map((revenue, index) => fromMix(companyId, 2022 + index, revenue, staff(companyId, revenues.length - 1 - index))),
-);
-
-const labs: FinancialSeed[] = [
-  fromMix("co-innova-labs", 2024, 620000000, 11),
-  fromMix("co-innova-labs", 2025, 780000000, 14),
-];
-
-const covered = new Set<string>([
-  "co-innova",
-  "co-innova-labs",
-  ...Object.keys(series),
-  ...empty,
-]);
-
-const singleYear: FinancialSeed[] = companies
-  .filter((company) => !covered.has(company.id))
-  .map((company, index) => fromMix(company.id, 2025, 125000000 + index * 43000000, company.numeroEmpleados ?? 8));
-
-export const financials: FinancialSeed[] = [...innova, ...multiYear, ...labs, ...singleYear];
+export const financials: FinancialSeed[] = companies
+  .filter((company) => !EMPTY.has(company.id))
+  .flatMap((company) => {
+    const years = yearsFor(company);
+    const behavior = company.id === "co-innova" ? "crecimiento" : behaviorOf(company.id);
+    const latest = company.id === "co-innova" ? 3_970_000_000 : latestRevenue(company);
+    const revenues = revenuePath(latest, years.length, behavior, hash(company.id) % 3);
+    if (behavior === "disminucion" && revenues.length >= 2) {
+      const last = revenues.length - 1;
+      const previous = revenues[last - 1] ?? latest;
+      revenues[last] = millions(previous * 0.91);
+    }
+    return years.map((year, index) => statement(company, year, revenues[index] ?? latest, employeesAt(company, index, years.length), behavior, index));
+  });
