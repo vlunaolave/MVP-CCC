@@ -164,3 +164,28 @@
     animation: none;
   }
 }
+
+html[data-a11y-size="large"] {
+  font-size: 112.5%;
+}
+
+html[data-a11y-size="xlarge"] {
+  font-size: 125%;
+}
+
+html[data-a11y-contrast="true"] {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.18 0.02 265);
+  --muted-foreground: oklch(0.28 0.03 265);
+  --border: oklch(0.35 0.02 265);
+}
+
+html[data-a11y-contrast="true"] body {
+  background: #fff;
+  color: #111;
+}
+
+html[data-a11y-links="true"] a {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}

@@ -16,6 +16,7 @@ import { AddToListDialog } from "@/features/lists";
 import { CompanyTimeline } from "@/features/timeline";
 import { apiClient } from "@/shared/lib/api-client";
 import { useUiStore } from "@/shared/lib/ui-store";
+import { CurrencyTooltip, CurrencyYAxis } from "@/shared/components/currency-axis";
 import { CoverageList } from "@/shared/components/coverage-list";
 import { DataSourceBadge } from "@/shared/components/data-source-badge";
 import { LastUpdatedLabel } from "@/shared/components/last-updated-label";
@@ -32,7 +33,7 @@ import {
   TAMANO_LABEL,
   formatMoney,
 } from "@/shared/utils/labels";
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, XAxis } from "recharts";
 import { groupRelationsByPerson, personScopeLabel, vinculoLabel, vinculosEnOtrasEmpresas } from "@/shared/utils/person-relations";
 
 const LINK_TYPES = new Set(["EMPRESA_RELACIONADA", "MATRIZ", "SUBSIDIARIA"]);
@@ -129,7 +130,7 @@ export function CompanyProfileScreen({ companyId }: { companyId: string }) {
   const chart = (finances.data?.periodos ?? []).map((period) => ({ year: String(period.year), ingresos: period.revenue }));
 
   return (
-    <div className="grid gap-6">
+    <div className="grid min-w-0 gap-6">
       <div className="flex flex-col gap-4 rounded-xl border bg-card p-5 shadow-sm lg:flex-row lg:items-start lg:justify-between">
         <div className="grid gap-2">
           <DataSourceBadge />
@@ -152,19 +153,19 @@ export function CompanyProfileScreen({ companyId }: { companyId: string }) {
           <AddToListDialog companyId={company.id} />
         </div>
       </div>
-      <Tabs defaultValue="resumen">
-        <TabsList className="h-auto flex-wrap">
-          <TabsTrigger value="resumen">Resumen</TabsTrigger>
-          <TabsTrigger value="registral">Datos registrales</TabsTrigger>
-          <TabsTrigger value="finanzas">Finanzas</TabsTrigger>
-          <TabsTrigger value="analisis">Análisis inteligente</TabsTrigger>
-          {company.relaciones ? <TabsTrigger value="directivos">Directivos y propiedad</TabsTrigger> : null}
-          {company.relaciones ? <TabsTrigger value="relaciones">Relaciones</TabsTrigger> : null}
-          <TabsTrigger value="comparacion">Comparación</TabsTrigger>
-          {company.timeline ? <TabsTrigger value="timeline">Timeline</TabsTrigger> : null}
-          {company.alertas ? <TabsTrigger value="alertas">Alertas</TabsTrigger> : null}
+      <Tabs defaultValue="resumen" className="min-w-0 max-w-full">
+        <TabsList className="h-auto w-full max-w-full flex-nowrap justify-start overflow-x-auto">
+          <TabsTrigger className="flex-none" value="resumen">Resumen</TabsTrigger>
+          <TabsTrigger className="flex-none" value="registral">Datos registrales</TabsTrigger>
+          <TabsTrigger className="flex-none" value="finanzas">Finanzas</TabsTrigger>
+          <TabsTrigger className="flex-none" value="analisis">Análisis inteligente</TabsTrigger>
+          {company.relaciones ? <TabsTrigger className="flex-none" value="directivos">Directivos y propiedad</TabsTrigger> : null}
+          {company.relaciones ? <TabsTrigger className="flex-none" value="relaciones">Relaciones</TabsTrigger> : null}
+          <TabsTrigger className="flex-none" value="comparacion">Comparación</TabsTrigger>
+          {company.timeline ? <TabsTrigger className="flex-none" value="timeline">Timeline</TabsTrigger> : null}
+          {company.alertas ? <TabsTrigger className="flex-none" value="alertas">Alertas</TabsTrigger> : null}
         </TabsList>
-        <TabsContent value="resumen" className="grid gap-4">
+        <TabsContent value="resumen" className="grid min-w-0 gap-4">
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
             <Kpi label="Ingresos" value={formatMoney(ultimo?.ingresos ?? null)} variation={formatVariation(ultimo?.variacionIngresos ?? null, ultimo?.anioAnterior ?? null)} />
             <Kpi label={ultimo ? `Activos (estados ${ultimo.year})` : "Activos"} value={formatMoney(ultimo?.activos ?? null)} variation={formatVariation(ultimo?.variacionActivos ?? null, ultimo?.anioAnterior ?? null)} />
@@ -205,13 +206,13 @@ export function CompanyProfileScreen({ companyId }: { companyId: string }) {
               {finances.isError ? <ErrorState onRetry={() => void finances.refetch()} /> : null}
               {finances.data && chart.length === 0 ? <EmptyState title="Sin información financiera disponible" /> : null}
               {chart.length > 0 ? (
-                <div className="h-64">
+                <div className="h-64 min-w-0">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chart}>
+                    <BarChart data={chart} margin={{ left: 4, right: 8, top: 8, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} />
                       <XAxis dataKey="year" tick={{ fontSize: 12 }} />
-                      <YAxis tick={{ fontSize: 12 }} width={72} />
-                      <Tooltip />
+                      <CurrencyYAxis />
+                      <CurrencyTooltip />
                       <Bar dataKey="ingresos" name="Ingresos" fill="var(--chart-1)" radius={4} />
                     </BarChart>
                   </ResponsiveContainer>

@@ -1,11 +1,12 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Bar, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, XAxis } from "recharts";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiClient } from "@/shared/lib/api-client";
+import { CurrencyTooltip, CurrencyYAxis } from "@/shared/components/currency-axis";
 import { EmptyState, ErrorState, LoadingBlock } from "@/shared/components/screen-states";
 import type { FinancePayload } from "@/shared/types/domain";
 import { FUENTE_DEMO, indicatorViews, type IndicatorGroup, type IndicatorView } from "@/server/services/financial-indicators";
@@ -77,13 +78,13 @@ export function FinancePanel({ companyId }: { companyId: string }) {
         <h2 className="text-lg font-semibold tracking-tight">Evolución financiera</h2>
         <Card>
           <CardContent className="pt-6">
-            <div className="h-72">
+            <div className="h-72 min-w-0">
               <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={chart}>
+                <ComposedChart data={chart} margin={{ left: 4, right: 8, top: 8, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="year" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} width={88} tickFormatter={(value: number) => formatCOPCompact(value)} />
-                  <Tooltip formatter={(value) => formatCOP(typeof value === "number" ? value : Number(value))} />
+                  <CurrencyYAxis />
+                  <CurrencyTooltip />
                   <Legend />
                   <Bar dataKey="ingresos" name="Ingresos" fill="var(--chart-1)" radius={4} />
                   <Line type="monotone" dataKey="activos" name="Activos" stroke="var(--chart-2)" strokeWidth={2} />
