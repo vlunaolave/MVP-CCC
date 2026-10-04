@@ -73,7 +73,8 @@ export type TipoEvento =
   | "OTRO_REGISTRAL"
   | "NOTICIA"
   | "NOMBRAMIENTO"
-  | "CAMBIO_PARTICIPACION";
+  | "CAMBIO_PARTICIPACION"
+  | "INDICADOR";
 export type GraphNodeType =
   | "empresa"
   | "representante"

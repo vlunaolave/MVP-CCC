@@ -124,6 +124,7 @@ export const EVENTO_LABEL: Record<TipoEvento, string> = {
   NOTICIA: "Noticia",
   NOMBRAMIENTO: "Nombramiento",
   CAMBIO_PARTICIPACION: "Cambio de participación",
+  INDICADOR: "Indicador financiero",
 };
 
 export { formatCOP as formatMoney } from "@/shared/utils/format";

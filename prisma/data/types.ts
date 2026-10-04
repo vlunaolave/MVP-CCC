@@ -106,9 +106,11 @@ export interface AlertRuleSeed {
   id: string;
   nombre: string;
   descripcion: string;
-  tipoEvento: EventSeed["tipo"];
+  tipoEvento: EventSeed["tipo"] | "INDICADOR";
   campoObservado: string;
-  condicion: "CAMBIO" | "IGUAL_A" | "DISTINTO_DE";
+  categoria?: "REGISTRAL" | "FINANCIERA" | "PROPIEDAD" | "DIRECTIVOS" | "ACTIVIDAD" | "UBICACION";
+  alcance?: "TODAS" | "MONITOREADAS";
+  condicion: "CAMBIO" | "IGUAL_A" | "DISTINTO_DE" | "MAYOR_QUE" | "MENOR_QUE" | "MAYOR_IGUAL" | "MENOR_IGUAL" | "VARIACION_MAYOR" | "VARIACION_MENOR";
   valorReferencia: string | null;
   severidad: "INFORMATIVA" | "ATENCION" | "IMPORTANTE";
   activa: boolean;

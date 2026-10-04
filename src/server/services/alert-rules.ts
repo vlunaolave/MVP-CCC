@@ -3,7 +3,7 @@ export interface RuleInput {
   nombre: string;
   tipoEvento: string;
   campoObservado: string;
-  condicion: "CAMBIO" | "IGUAL_A" | "DISTINTO_DE";
+  condicion: "CAMBIO" | "IGUAL_A" | "DISTINTO_DE" | "MAYOR_QUE" | "MENOR_QUE" | "MAYOR_IGUAL" | "MENOR_IGUAL" | "VARIACION_MAYOR" | "VARIACION_MENOR";
   valorReferencia: string | null;
   severidad: "INFORMATIVA" | "ATENCION" | "IMPORTANTE";
   activa: boolean;

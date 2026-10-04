@@ -15,7 +15,7 @@ describe("dataset de demostración", () => {
   it("cumple los volúmenes y el caso INNOVA VALLE", () => {
     expect(companies).toHaveLength(50);
     expect(people).toHaveLength(50);
-    expect(alertRules).toHaveLength(6);
+    expect(alertRules).toHaveLength(10);
     expect(events.length).toBeGreaterThanOrEqual(36);
     expect(new Set(companies.map((company) => company.sector)).size).toBe(7);
     expect(benchmarks).toHaveLength(28);
@@ -31,7 +31,8 @@ describe("dataset de demostración", () => {
     expect(horizonte?.tipoRegistro).toBe("ESAL");
     expect(horizonte?.capital).toBeNull();
     expect(horizonte?.activos).toBeNull();
-    expect(financials.filter((period) => period.companyId === "co-horizonte")).toHaveLength(0);
+    expect(financials.filter((period) => period.companyId === "co-horizonte").length).toBeGreaterThanOrEqual(2);
+    expect(new Set(financials.map((period) => period.companyId)).size).toBe(companies.length);
     const directivos = relations.filter(
       (relation) =>
         relation.companyId === "co-innova" &&

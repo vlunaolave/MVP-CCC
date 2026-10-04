@@ -5,6 +5,9 @@ import { hasPermission } from "@/shared/lib/permissions";
 import type { CompanyProfile, RolCodigo, SectorCodigo, SessionUser } from "@/shared/types/domain";
 import type { AlertFilters, CompanyFilters, DashboardFilters, MonitoringFilters } from "@/shared/types/filters";
 import { AppError } from "@/server/errors";
+import { assertRule, previewRule, syncRuleAlerts, type RuleInput } from "@/server/services/alert-rule-sync";
+import { buildCompanyAnalysis } from "@/server/services/company-analysis";
+import { categoryLabel, fieldById, operatorLabel } from "@/shared/utils/alert-rule-catalog";
 import {
   SqliteAlertRepository,
   SqliteAuditRepository,
@@ -57,6 +60,9 @@ export const companyService = {
   },
   graph(id: string) {
     return companies.graph(id);
+  },
+  async analysis(user: SessionUser, id: string) {
+    return buildCompanyAnalysis(prisma, id, hasPermission(user.rol, "alertas.ver"));
   },
   async finances(id: string) {
     const payload = await companies.finances(id);
@@ -272,6 +278,159 @@ export const adminService = {
       metadata: { clave },
     });
     return updated;
+  },
+};
+
+async function namesById() {
+  const users = await prisma.user.findMany({ select: { id: true, nombre: true } });
+  return new Map(users.map((user) => [user.id, user.nombre]));
+}
+
+function presentRule(rule: {
+  id: string;
+  nombre: string;
+  descripcion: string;
+  categoria: RuleInput["categoria"];
+  tipoEvento: string;
+  campoObservado: string;
+  condicion: RuleInput["condicion"];
+  valorReferencia: string | null;
+  severidad: RuleInput["severidad"];
+  activa: boolean;
+  alcance: RuleInput["alcance"];
+  createdAt: Date;
+  updatedAt: Date;
+  createdById: string | null;
+  updatedById: string | null;
+}, names: Map<string, string>) {
+  const field = fieldById(rule.categoria, rule.campoObservado);
+  return {
+    ...rule,
+    createdAt: rule.createdAt.toISOString(),
+    updatedAt: rule.updatedAt.toISOString(),
+    categoriaLabel: categoryLabel(rule.categoria),
+    campoLabel: field?.label ?? rule.campoObservado,
+    condicionLabel: operatorLabel(rule.condicion),
+    createdBy: rule.createdById ? names.get(rule.createdById) ?? "Usuario" : "Sistema",
+    updatedBy: rule.updatedById ? names.get(rule.updatedById) ?? "Usuario" : "Sistema",
+  };
+}
+
+export const alertRuleService = {
+  async list() {
+    const [rules, names] = await Promise.all([
+      prisma.alertRule.findMany({ orderBy: { updatedAt: "desc" } }),
+      namesById(),
+    ]);
+    return rules.map((rule) => presentRule(rule, names));
+  },
+  async create(actor: SessionUser, input: RuleInput) {
+    const field = assertRule(input);
+    const created = await prisma.alertRule.create({
+      data: {
+        nombre: input.nombre,
+        descripcion: input.descripcion,
+        categoria: input.categoria,
+        tipoEvento: field.tipoEvento as never,
+        campoObservado: input.campoObservado,
+        condicion: input.condicion,
+        valorReferencia: input.valorReferencia?.trim() || null,
+        severidad: input.severidad,
+        activa: input.activa,
+        alcance: input.alcance,
+        esDemostrativa: false,
+        createdById: actor.id,
+        updatedById: actor.id,
+      },
+    });
+    await syncRuleAlerts(prisma, created.id);
+    await audit.write({
+      userId: actor.id,
+      accion: "CAMBIO_ADMINISTRATIVO",
+      entidad: "AlertRule",
+      entidadId: created.id,
+      metadata: { operacion: "crear", nombre: created.nombre },
+    });
+    return presentRule(created, await namesById());
+  },
+  async update(actor: SessionUser, id: string, input: RuleInput) {
+    const current = await prisma.alertRule.findUnique({ where: { id } });
+    if (!current) throw new AppError("La regla no existe.", 404, "NOT_FOUND");
+    const field = assertRule(input);
+    const updated = await prisma.alertRule.update({
+      where: { id },
+      data: {
+        nombre: input.nombre,
+        descripcion: input.descripcion,
+        categoria: input.categoria,
+        tipoEvento: field.tipoEvento as never,
+        campoObservado: input.campoObservado,
+        condicion: input.condicion,
+        valorReferencia: input.valorReferencia?.trim() || null,
+        severidad: input.severidad,
+        activa: input.activa,
+        alcance: input.alcance,
+        updatedById: actor.id,
+      },
+    });
+    await syncRuleAlerts(prisma, id);
+    await audit.write({
+      userId: actor.id,
+      accion: "CAMBIO_ADMINISTRATIVO",
+      entidad: "AlertRule",
+      entidadId: id,
+      metadata: {
+        operacion: "actualizar",
+        antes: { condicion: current.condicion, valor: current.valorReferencia, severidad: current.severidad, activa: current.activa },
+        despues: { condicion: updated.condicion, valor: updated.valorReferencia, severidad: updated.severidad, activa: updated.activa },
+      },
+    });
+    return presentRule(updated, await namesById());
+  },
+  async duplicate(actor: SessionUser, id: string) {
+    const current = await prisma.alertRule.findUnique({ where: { id } });
+    if (!current) throw new AppError("La regla no existe.", 404, "NOT_FOUND");
+    const created = await prisma.alertRule.create({
+      data: {
+        nombre: `Copia de ${current.nombre}`.slice(0, 80),
+        descripcion: current.descripcion,
+        categoria: current.categoria,
+        tipoEvento: current.tipoEvento,
+        campoObservado: current.campoObservado,
+        condicion: current.condicion,
+        valorReferencia: current.valorReferencia,
+        severidad: current.severidad,
+        activa: false,
+        alcance: current.alcance,
+        esDemostrativa: false,
+        createdById: actor.id,
+        updatedById: actor.id,
+      },
+    });
+    await audit.write({
+      userId: actor.id,
+      accion: "CAMBIO_ADMINISTRATIVO",
+      entidad: "AlertRule",
+      entidadId: created.id,
+      metadata: { operacion: "duplicar", origen: id },
+    });
+    return presentRule(created, await namesById());
+  },
+  async remove(actor: SessionUser, id: string) {
+    const current = await prisma.alertRule.findUnique({ where: { id } });
+    if (!current) throw new AppError("La regla no existe.", 404, "NOT_FOUND");
+    await prisma.alert.deleteMany({ where: { ruleId: id } });
+    await prisma.alertRule.delete({ where: { id } });
+    await audit.write({
+      userId: actor.id,
+      accion: "CAMBIO_ADMINISTRATIVO",
+      entidad: "AlertRule",
+      entidadId: id,
+      metadata: { operacion: "eliminar", nombre: current.nombre },
+    });
+  },
+  preview(input: RuleInput, companyId: string) {
+    return previewRule(prisma, input, companyId);
   },
 };
 

@@ -99,12 +99,33 @@ enum TipoEvento {
   NOTICIA
   NOMBRAMIENTO
   CAMBIO_PARTICIPACION
+  INDICADOR
 }
 
 enum CondicionRegla {
   CAMBIO
   IGUAL_A
   DISTINTO_DE
+  MAYOR_QUE
+  MENOR_QUE
+  MAYOR_IGUAL
+  MENOR_IGUAL
+  VARIACION_MAYOR
+  VARIACION_MENOR
+}
+
+enum CategoriaRegla {
+  REGISTRAL
+  FINANCIERA
+  PROPIEDAD
+  DIRECTIVOS
+  ACTIVIDAD
+  UBICACION
+}
+
+enum AlcanceRegla {
+  TODAS
+  MONITOREADAS
 }
 
 enum AccionAuditoria {
@@ -306,13 +327,19 @@ model AlertRule {
   id              String         @id @default(uuid())
   nombre          String
   descripcion     String
+  categoria       CategoriaRegla @default(REGISTRAL)
   tipoEvento      TipoEvento
   campoObservado  String
   condicion       CondicionRegla
   valorReferencia String?
   severidad       Severidad
   activa          Boolean
+  alcance         AlcanceRegla   @default(TODAS)
   esDemostrativa  Boolean
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  createdById     String?
+  updatedById     String?
 
   alertas Alert[]
 }

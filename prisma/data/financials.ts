@@ -5,8 +5,6 @@ type Behavior = "crecimiento" | "estable" | "disminucion" | "endeudamiento" | "l
 
 const BEHAVIORS: Behavior[] = ["crecimiento", "estable", "disminucion", "endeudamiento", "liquidez"];
 
-const EMPTY = new Set(["co-horizonte", "co-faro", "co-semilla", "co-recicladores", "co-horno", "co-cafe", "co-marea", "co-vitrina"]);
-
 const ASSET_TO_REVENUE: Record<CompanySeed["sector"], number> = {
   TECNOLOGIA: 0.92,
   COMERCIO: 0.48,
@@ -59,8 +57,8 @@ function yearsFor(company: CompanySeed): number[] {
   if (company.id === "co-innova") {
     return [2021, 2022, 2023, 2024, 2025];
   }
-  const founded = company.fechaConstitucion ? Number(company.fechaConstitucion.slice(0, 4)) : 2024;
-  const start = Math.max(2021, Math.min(Number.isFinite(founded) ? founded : 2024, 2025));
+  const founded = company.fechaConstitucion ? Number(company.fechaConstitucion.slice(0, 4)) : 2023;
+  const start = Math.min(2024, Math.max(2021, Number.isFinite(founded) ? founded : 2023));
   const years: number[] = [];
   for (let year = start; year <= 2025; year += 1) {
     years.push(year);
@@ -93,7 +91,7 @@ function statement(
   const assetMultiple = ASSET_TO_REVENUE[company.sector] + (unit(salt) - 0.5) * 0.16;
   const totalAssets = millions(revenue * assetMultiple);
   const debtRatio =
-    behavior === "endeudamiento" ? 0.68 + unit(salt) * 0.08 : behavior === "liquidez" ? 0.22 + unit(salt) * 0.08 : 0.36 + unit(salt) * 0.16;
+    behavior === "endeudamiento" ? 0.72 + unit(salt) * 0.06 : behavior === "liquidez" ? 0.22 + unit(salt) * 0.08 : 0.36 + unit(salt) * 0.16;
   const totalLiabilities = millions(totalAssets * debtRatio);
   const equity = totalAssets - totalLiabilities;
   const currentAssetShare = behavior === "liquidez" ? 0.74 : company.sector === "COMERCIO" ? 0.6 : 0.4 + unit(salt) * 0.12;
@@ -133,9 +131,7 @@ function employeesAt(company: CompanySeed, index: number, count: number): number
   return Math.max(1, latest - stepsBack * Math.max(1, Math.round(latest * 0.06)));
 }
 
-export const financials: FinancialSeed[] = companies
-  .filter((company) => !EMPTY.has(company.id))
-  .flatMap((company) => {
+export const financials: FinancialSeed[] = companies.flatMap((company) => {
     const years = yearsFor(company);
     const behavior = company.id === "co-innova" ? "crecimiento" : behaviorOf(company.id);
     const latest = company.id === "co-innova" ? 3_970_000_000 : latestRevenue(company);

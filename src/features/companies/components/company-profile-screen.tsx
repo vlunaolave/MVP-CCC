@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FinancePanel } from "@/features/companies/components/finance-panel";
+import { IntelligentAnalysis } from "@/features/companies/components/intelligent-analysis";
 import { MonitorButton } from "@/features/companies/components/monitor-button";
 import { CompareButton, SectorComparison, SimilarCompanies } from "@/features/comparison";
 import { CompanyGraph } from "@/features/graph";
@@ -156,6 +157,7 @@ export function CompanyProfileScreen({ companyId }: { companyId: string }) {
           <TabsTrigger value="resumen">Resumen</TabsTrigger>
           <TabsTrigger value="registral">Datos registrales</TabsTrigger>
           <TabsTrigger value="finanzas">Finanzas</TabsTrigger>
+          <TabsTrigger value="analisis">Análisis inteligente</TabsTrigger>
           {company.relaciones ? <TabsTrigger value="directivos">Directivos y propiedad</TabsTrigger> : null}
           {company.relaciones ? <TabsTrigger value="relaciones">Relaciones</TabsTrigger> : null}
           <TabsTrigger value="comparacion">Comparación</TabsTrigger>
@@ -292,6 +294,9 @@ export function CompanyProfileScreen({ companyId }: { companyId: string }) {
         </TabsContent>
         <TabsContent value="finanzas">
           <FinancePanel companyId={company.id} />
+        </TabsContent>
+        <TabsContent value="analisis">
+          <IntelligentAnalysis companyId={company.id} />
         </TabsContent>
         {company.relaciones ? (
           <TabsContent value="directivos" className="grid gap-4 lg:grid-cols-2">
