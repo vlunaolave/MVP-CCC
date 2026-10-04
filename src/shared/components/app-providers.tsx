@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AccessibilityWidget } from "@/shared/components/accessibility-widget";
 import { makeQueryClient } from "@/shared/lib/query-client";
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
@@ -13,6 +14,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     <QueryClientProvider client={client}>
       <TooltipProvider>
         {children}
+        <AccessibilityWidget />
         <Toaster position="top-right" richColors closeButton />
       </TooltipProvider>
     </QueryClientProvider>

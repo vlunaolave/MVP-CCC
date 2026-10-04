@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, XAxis } from "recharts";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +12,7 @@ import { FilterBar, FilterGroup } from "@/shared/components/filter-panel";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useComparisonStore } from "@/features/comparison/store";
 import { apiClient } from "@/shared/lib/api-client";
+import { CurrencyTooltip, CurrencyYAxis } from "@/shared/components/currency-axis";
 import { DataSourceBadge } from "@/shared/components/data-source-badge";
 import { EmptyState, ErrorState, LoadingBlock } from "@/shared/components/screen-states";
 import type { ComparadorColumna, ComparadorPayload } from "@/shared/types/domain";
@@ -187,13 +188,13 @@ export function ComparadorScreen() {
           {(query.data?.columnas.length ?? 0) < 2 ? (
             <EmptyState title="Agrega al menos dos empresas para ver el gráfico" />
           ) : (
-            <div className="h-80">
+            <div className="h-80 min-w-0">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chart} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
+                <BarChart data={chart} margin={{ left: 4, right: 8, top: 8, bottom: 28 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="nombre" tick={{ fontSize: 11 }} interval={0} />
-                  <YAxis tick={{ fontSize: 11 }} width={72} />
-                  <Tooltip />
+                  <XAxis dataKey="nombre" tick={{ fontSize: 11 }} interval={0} angle={-18} textAnchor="end" height={56} />
+                  <CurrencyYAxis />
+                  <CurrencyTooltip />
                   <Legend />
                   <Bar dataKey="ingresos" name="Ingresos" fill="var(--chart-1)" radius={4} />
                   <Bar dataKey="utilidad" name="Utilidad" fill="var(--chart-2)" radius={4} />

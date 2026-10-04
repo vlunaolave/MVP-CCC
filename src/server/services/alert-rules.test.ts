@@ -72,7 +72,7 @@ describe("dataset de demostración", () => {
         "Cambio de dirección",
         "Cambio de actividad económica",
         "Cambio de representante legal",
-        "Nueva renovación",
+        "Renovación de matrícula",
       ]),
     );
   });
