@@ -4,6 +4,7 @@ import { Accessibility, Minus, Plus, RotateCcw } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { ScrollToTopButton } from "@/shared/components/scroll-to-top-button";
 
 type TextSize = "base" | "large" | "xlarge";
 
@@ -97,6 +98,7 @@ export function AccessibilityWidget() {
           </div>
         </section>
       ) : null}
+      <ScrollToTopButton />
       <Button
         type="button"
         size="icon"
