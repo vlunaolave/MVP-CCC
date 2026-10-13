@@ -136,14 +136,13 @@ export function AlertsScreen() {
       {query.isError ? <ErrorState onRetry={() => void query.refetch()} /> : null}
       {query.data && query.data.items.length === 0 ? <EmptyState title="No hay alertas con estos filtros." /> : null}
       {query.data && query.data.items.length > 0 ? (
-        <>
-          <div className="hidden rounded-xl border bg-card shadow-sm md:block">
+        <div className="@container">
+          <div className="hidden overflow-x-auto rounded-xl border bg-card shadow-sm @min-[960px]:block">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Empresa</TableHead>
                   <TableHead>Evento</TableHead>
-                  <TableHead>Descripción</TableHead>
                   <TableHead>Fecha</TableHead>
                   <TableHead>Severidad</TableHead>
                   <TableHead>Acciones</TableHead>
@@ -151,15 +150,17 @@ export function AlertsScreen() {
               </TableHeader>
               <TableBody>
                 {query.data.items.map((alert) => (
-                  <TableRow key={alert.id}>
-                    <TableCell>{alert.razonSocial}</TableCell>
-                    <TableCell>{alert.titulo}</TableCell>
-                    <TableCell className="max-w-sm">{alert.descripcion}</TableCell>
-                    <TableCell>{formatDisplayDate(alert.fecha)}</TableCell>
-                    <TableCell>
+                  <TableRow key={alert.id} className={alert.leida ? undefined : "bg-primary/5"}>
+                    <TableCell className="max-w-48 whitespace-normal align-top font-medium">{alert.razonSocial}</TableCell>
+                    <TableCell className="max-w-sm whitespace-normal align-top">
+                      <p>{alert.titulo}</p>
+                      <p className="mt-1 line-clamp-3 text-xs leading-5 text-muted-foreground">{alert.descripcion}</p>
+                    </TableCell>
+                    <TableCell className="align-top whitespace-nowrap">{formatDisplayDate(alert.fecha)}</TableCell>
+                    <TableCell className="align-top whitespace-nowrap">
                       <SeverityBadge severidad={alert.severidad} />
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="align-top whitespace-nowrap">
                       <AlertActions alert={alert} pending={markRead.isPending} onRead={() => markRead.mutate(alert.id)} onDetail={() => setDetail(alert)} />
                     </TableCell>
                   </TableRow>
@@ -167,23 +168,23 @@ export function AlertsScreen() {
               </TableBody>
             </Table>
           </div>
-          <ul className="grid gap-3 md:hidden">
+          <ul className="grid gap-3 @min-[640px]:grid-cols-2 @min-[960px]:hidden">
             {query.data.items.map((alert) => (
-              <li key={alert.id} className="rounded-xl border bg-card p-4 shadow-sm">
-                <p className="font-medium">{alert.razonSocial}</p>
-                <p className="text-sm">{alert.titulo}</p>
-                <p className="mt-1 text-sm text-muted-foreground">{alert.descripcion}</p>
-                <div className="mt-2 flex items-center gap-2">
+              <li key={alert.id} className={`rounded-xl border bg-card p-4 shadow-sm ${alert.leida ? "" : "border-primary/30"}`}>
+                <div className="flex items-start justify-between gap-3">
+                  <p className="min-w-0 font-medium leading-snug">{alert.razonSocial}</p>
                   <SeverityBadge severidad={alert.severidad} />
-                  <span className="text-xs text-muted-foreground">{formatDisplayDate(alert.fecha)}</span>
                 </div>
+                <p className="mt-2 text-sm leading-5">{alert.titulo}</p>
+                <p className="mt-1 line-clamp-4 text-sm leading-5 text-muted-foreground">{alert.descripcion}</p>
+                <p className="mt-2 text-xs text-muted-foreground">{formatDisplayDate(alert.fecha)}</p>
                 <div className="mt-3">
                   <AlertActions alert={alert} pending={markRead.isPending} onRead={() => markRead.mutate(alert.id)} onDetail={() => setDetail(alert)} />
                 </div>
               </li>
             ))}
           </ul>
-        </>
+        </div>
       ) : null}
       <Dialog open={Boolean(detail)} onOpenChange={(open) => !open && setDetail(null)}>
         <DialogContent>
@@ -212,7 +213,7 @@ function AlertActions({
   onDetail: () => void;
 }) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-2 @min-[960px]:flex-nowrap">
       {!alert.leida ? (
         <Button type="button" size="sm" data-testid="alert-mark-read" disabled={pending} onClick={onRead}>
           Marcar leída
