@@ -137,34 +137,30 @@ export function AlertsScreen() {
       {query.data && query.data.items.length === 0 ? <EmptyState title="No hay alertas con estos filtros." /> : null}
       {query.data && query.data.items.length > 0 ? (
         <div className="@container">
-          <div className="hidden overflow-hidden rounded-xl border bg-card shadow-sm @min-[960px]:block">
+          <div className="hidden overflow-x-auto rounded-xl border bg-card shadow-sm @min-[960px]:block">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[18%]">Empresa</TableHead>
-                  <TableHead className="w-[16%]">Evento</TableHead>
-                  <TableHead className="hidden w-[30%] @min-[1180px]:table-cell">Descripción</TableHead>
-                  <TableHead className="w-[12%]">Fecha</TableHead>
-                  <TableHead className="w-[10%]">Severidad</TableHead>
-                  <TableHead className="w-[14%]">Acciones</TableHead>
+                  <TableHead>Empresa</TableHead>
+                  <TableHead>Evento</TableHead>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead>Severidad</TableHead>
+                  <TableHead>Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {query.data.items.map((alert) => (
                   <TableRow key={alert.id} className={alert.leida ? undefined : "bg-primary/5"}>
-                    <TableCell className="whitespace-normal align-top font-medium">{alert.razonSocial}</TableCell>
-                    <TableCell className="whitespace-normal align-top">
+                    <TableCell className="max-w-48 whitespace-normal align-top font-medium">{alert.razonSocial}</TableCell>
+                    <TableCell className="max-w-sm whitespace-normal align-top">
                       <p>{alert.titulo}</p>
-                      <p className="mt-1 line-clamp-3 text-xs leading-5 text-muted-foreground @min-[1180px]:hidden">{alert.descripcion}</p>
-                    </TableCell>
-                    <TableCell className="hidden whitespace-normal align-top text-muted-foreground @min-[1180px]:table-cell">
-                      <p className="line-clamp-3 leading-5">{alert.descripcion}</p>
+                      <p className="mt-1 line-clamp-3 text-xs leading-5 text-muted-foreground">{alert.descripcion}</p>
                     </TableCell>
                     <TableCell className="align-top whitespace-nowrap">{formatDisplayDate(alert.fecha)}</TableCell>
-                    <TableCell className="align-top">
+                    <TableCell className="align-top whitespace-nowrap">
                       <SeverityBadge severidad={alert.severidad} />
                     </TableCell>
-                    <TableCell className="whitespace-normal align-top">
+                    <TableCell className="align-top whitespace-nowrap">
                       <AlertActions alert={alert} pending={markRead.isPending} onRead={() => markRead.mutate(alert.id)} onDetail={() => setDetail(alert)} />
                     </TableCell>
                   </TableRow>
@@ -217,7 +213,7 @@ function AlertActions({
   onDetail: () => void;
 }) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-2 @min-[960px]:flex-nowrap">
       {!alert.leida ? (
         <Button type="button" size="sm" data-testid="alert-mark-read" disabled={pending} onClick={onRead}>
           Marcar leída
